@@ -531,3 +531,51 @@ class MotorCRNN(MotorOCR):
         for posicion, recorte in enumerate(recortes):
             lote[posicion, 0, :, : recorte.shape[1]] = self._torch.from_numpy(recorte)
         return lote
+
+
+class SegmentadorPorMotorOCR(Segmentador):
+    """Usa como segmentador las cajas de renglon que devuelve un motor OCR.
+
+    Sirve para **arrancar**: la U-Net propia se entreno con sinteticos y en
+    fotos reales sub-segmenta la zona densa de productos, fundiendo la tabla
+    entera en una sola mancha. Un motor que si funciona sobre fotos reales da
+    cajas por renglon fiables, y con ellas se pueden etiquetar los recortes
+    con los que despues se entrena el segmentador propio.
+    """
+
+    def __init__(self, motor: MotorOCR, alto_minimo: int = 10) -> None:
+        self.motor = motor
+        self.alto_minimo = alto_minimo
+
+    def segmentar(self, imagen: Imagen) -> list[CajaTexto]:
+        resultado = self.motor.reconocer(imagen)
+        cajas = [
+            l.caja for l in resultado.lineas
+            if l.caja is not None and l.caja.alto >= self.alto_minimo
+        ]
+        if not cajas:
+            return []
+        return sorted(self._ancho_comun(cajas, imagen), key=lambda c: c.centro_y)
+
+    @staticmethod
+    def _ancho_comun(cajas: list[CajaTexto], imagen: Imagen) -> list[CajaTexto]:
+        """Lleva todas las cajas al mismo rango horizontal.
+
+        El motor acota cada caja al texto que *el* leyo, asi que en un renglon
+        como «1    HORCHATA LATTE FRIO    $79.00» puede empezar en la
+        descripcion y dejar fuera la columna de cantidad. La etiqueta si la
+        incluye, y entrenar con esa discrepancia ensena a inventar cantidades.
+        Un renglon de ticket ocupa el ancho del papel: se usa la union.
+        """
+        # Percentiles, no minimo y maximo: una sola caja mal detectada —el
+        # canto del papel, una sombra— arrastra el borde y mete una columna
+        # oscura en todos los recortes, que el reconocedor acaba leyendo como
+        # un caracter al inicio de cada renglon.
+        margen = 6
+        izquierdas = sorted(c.x for c in cajas)
+        derechas = sorted(c.x + c.ancho for c in cajas)
+        x0 = max(0, int(np.percentile(izquierdas, 10)) - margen)
+        x1 = min(imagen.ancho, int(np.percentile(derechas, 90)) + margen)
+        if x1 - x0 < 32:
+            x0, x1 = min(izquierdas), max(derechas)
+        return [CajaTexto(x0, c.y, x1 - x0, c.alto, c.angulo) for c in cajas]

@@ -119,8 +119,10 @@ class ClasificadorHeuristico(ClasificadorDeLineas):
     # el separador «:» o «#», que es lo que distingue un dato del POS de una
     # descripcion de producto.
     _METADATO = re.compile(
-        r"\b(MESA|MESERO|PERSONAS|COMENSALES|ORDEN|FOLIO|CAJERO|CLIENTE|TURNO|CAJA|RFC"
-        r"|TEL|SUCURSAL|CODIGO\s+FACT|DIAS\s+VIGENCIA|AMBIENTES)\s*(?:NO\.?|N[°º])?\s*[:#]",
+        r"\b(MESA|MESERO|PERSONAS|COMENSALES|ORDEN|FOLIO|TICKET|CAJERO|CLIENTE|TURNO|CAJA|RFC"
+        r"|TEL|SUCURSAL|CODIGO\s+FACT|DIAS\s+VIGENCIA|AMBIENTES)\s*(?:NO\.?|N[°º])?\s*[:#]"
+        # Algunos POS omiten los dos puntos: «Mesa 201/1», «Mesero Rappi».
+        r"|^\s*(?:MESA|MESERO|COMENSALES|PERSONAS)\s+\S",
         re.IGNORECASE,
     )
     _DIRECCION = re.compile(r"\bC\.?P\.?\s*\d{5}\b", re.IGNORECASE)
@@ -129,13 +131,23 @@ class ClasificadorHeuristico(ClasificadorDeLineas):
     _PROPINA = re.compile(r"\b(PROPINA|TIP|SERVICIO)\b", re.IGNORECASE)
     _SIN_PROPINA = re.compile(r"\bNO\s+(INCLUID|INCLUDED)", re.IGNORECASE)
     _TOTAL = re.compile(r"\bTOTAL\b", re.IGNORECASE)
+    # Formas de pago y saldos: llevan importe pero no son consumo. Sumarlas
+    # duplicaria la cuenta.
+    _PAGO = re.compile(
+        r"\b(EFECTIVO|TARJETA|CREDITO|DEBITO|RAPPI|UBER|DIDI|TRANSFERENCIA|VALES"
+        r"|PENDIENTE\s+DE\s+PAGO|CAMBIO|SU\s+PAGO|RECIBIDO|SALDO)\b",
+        re.IGNORECASE,
+    )
     _UNITARIO = re.compile(r"^\s*[@]|\bC\s*/\s*U\b", re.IGNORECASE)
     _FECHA = re.compile(r"\d{1,2}[/-]\d{1,2}[/-]\d{2,4}")
     _NOTA = re.compile(
         r"^\s*SON\s*:|COMPROBANTE\s+FISCAL|https?://|GRACIAS|FACTURA|VIGENCIA|@\w+\.\w+",
         re.IGNORECASE,
     )
-    _IMPORTE_FINAL = re.compile(r"[\d.,]{2,}\s*$")
+    # Sin plantilla reconocida no hay bloque que acote los productos, asi que
+    # la regla tiene que ser estricta: un importe de ticket trae dos decimales.
+    # Sin eso, «Benito Juarez CDMX 3100» se cuela como producto de $3,100.
+    _IMPORTE_FINAL = re.compile(r"\d[.,]\d{2}\s*$")
 
     def clasificar(self, texto: str) -> TipoLinea:
         limpio = texto.strip()
@@ -158,6 +170,8 @@ class ClasificadorHeuristico(ClasificadorDeLineas):
         # linea suelta «IVA: $219.31` no dice TOTAL y sigue cayendo abajo.
         if self._TOTAL.search(limpio):
             return TipoLinea.TOTAL
+        if self._PAGO.search(limpio):
+            return TipoLinea.NOTA
         if self._IMPUESTO.search(limpio):
             return TipoLinea.IMPUESTO
         if self._UNITARIO.search(limpio):
@@ -213,7 +227,9 @@ class ExtractorDeProductos:
 class LectorDeMetadatos:
     """Saca mesa, comensales, folio y fecha del bloque de cabecera."""
 
-    _MESA = re.compile(r"\bMESA\s*[:.]?\s*(?P<valor>[A-Z0-9][A-Z0-9-]{0,9})", re.IGNORECASE)
+    _MESA = re.compile(
+        r"\bMESA\s*[:.]?\s*(?P<valor>[A-Z0-9][A-Z0-9/-]{0,9})", re.IGNORECASE
+    )
     _PERSONAS = re.compile(
         r"\b(?:PERSONAS|COMENSALES)\s*[:.]?\s*(?P<valor>\d{1,2})", re.IGNORECASE
     )
