@@ -127,12 +127,18 @@ class RenderizadorDeLinea:
 
     def renderizar(self, texto: str) -> np.ndarray:
         fuente = self._azar.choice(self._fuentes)
-        margen = self._azar.randint(2, 8)
-        ancho = int(fuente.getlength(texto)) + margen * 2
-        alto = self.config.altura_render + margen * 2
+        # Margenes asimetricos y amplios: el segmentador entrega el renglon con
+        # el margen del papel a los lados, no recortado al texto. Entrenar solo
+        # con texto pegado al borde hacia que el modelo leyera un «$» donde solo
+        # habia papel en blanco.
+        izquierda = self._azar.randint(2, 70)
+        derecha = self._azar.randint(2, 50)
+        vertical = self._azar.randint(2, 8)
+        ancho = int(fuente.getlength(texto)) + izquierda + derecha
+        alto = self.config.altura_render + vertical * 2
         lienzo = Image.new("L", (max(ancho, 16), alto), color=self._azar.randint(238, 255))
         ImageDraw.Draw(lienzo).text(
-            (margen, margen), texto, font=fuente, fill=self._azar.randint(10, 70)
+            (izquierda, vertical), texto, font=fuente, fill=self._azar.randint(10, 70)
         )
         matriz = np.array(lienzo)
         if self._azar.random() < self.config.probabilidad_degradar:
@@ -140,9 +146,13 @@ class RenderizadorDeLinea:
         return self._a_altura_fija(matriz)
 
     def _degradar(self, matriz: np.ndarray) -> np.ndarray:
+        from divieat_ticket.sintetico import textura_termica
+
         if self._azar.random() < 0.5:                      # impresion termica debil o saturada
             nucleo = np.ones((2, 2), np.uint8)
             matriz = (cv2.erode if self._azar.random() < 0.5 else cv2.dilate)(matriz, nucleo)
+        if self._azar.random() < 0.8:
+            matriz = textura_termica(matriz, self._azar)
         if self._azar.random() < 0.6:
             matriz = cv2.GaussianBlur(matriz, (3, 3), self._azar.uniform(0.3, 1.2))
         if self._azar.random() < 0.6:

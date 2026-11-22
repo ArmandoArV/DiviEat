@@ -231,6 +231,51 @@ class Degradacion:
         raise NotImplementedError
 
 
+def textura_termica(matriz: np.ndarray, azar: random.Random) -> np.ndarray:
+    """Convierte texto renderizado en algo que parece salido de una impresora termica.
+
+    Una cabeza termica no dibuja una fuente: quema una **rejilla de puntos**
+    (~203 ppp) sobre papel sensible. De ahi vienen las cuatro diferencias que
+    separan un render limpio de un ticket real, y que son justo las que hacian
+    que la red no transfiriera:
+
+    1. los trazos se cuantizan a la rejilla y pierden los bordes suaves;
+    2. algunos puntos no queman -> trazos mordidos, huecos dentro de la letra;
+    3. el calor se difunde al papel -> sangrado que redondea las esquinas;
+    4. la cabeza calienta desigual -> bandas horizontales mas claras y oscuras.
+
+    Encima va el grano del papel, que la camara amplifica.
+    """
+    alto, ancho = matriz.shape[:2]
+
+    # 1. rejilla de puntos
+    paso = azar.choice([2, 2, 3])
+    chico = cv2.resize(matriz, (max(1, ancho // paso), max(1, alto // paso)),
+                       interpolation=cv2.INTER_AREA)
+    umbral = azar.randint(120, 190)
+    puntos = np.where(chico < umbral, chico, 255).astype(np.uint8)
+
+    # 2. puntos que no queman
+    fallo = azar.uniform(0.02, 0.12)
+    generador = np.random.default_rng(azar.randrange(2**32))
+    perdidos = (generador.random(puntos.shape) < fallo) & (puntos < umbral)
+    puntos[perdidos] = azar.randint(170, 230)
+
+    matriz = cv2.resize(puntos, (ancho, alto), interpolation=cv2.INTER_NEAREST)
+
+    # 3. sangrado del calor en el papel
+    matriz = cv2.GaussianBlur(matriz, (3, 3), azar.uniform(0.4, 1.1))
+
+    # 4. bandeo horizontal de la cabeza
+    bandas = generador.normal(1.0, azar.uniform(0.01, 0.05), (alto, 1))
+    bandas = cv2.GaussianBlur(bandas.astype(np.float32), (1, 9), 0)
+    matriz = np.clip(matriz.astype(np.float32) * bandas, 0, 255)
+
+    # 5. grano del papel
+    grano = generador.normal(0, azar.uniform(2, 7), (alto, ancho))
+    return np.clip(matriz + grano, 0, 255).astype(np.uint8)
+
+
 class TintaTermica(Degradacion):
     """Imita la impresion termica: trazo que engorda o se adelgaza.
 
@@ -247,6 +292,8 @@ class TintaTermica(Degradacion):
             matriz = cv2.erode(matriz, nucleo)        # trazo grueso (tinta de mas)
         elif eleccion < 0.7:
             matriz = cv2.dilate(matriz, nucleo)       # trazo debil (papel gastado)
+        if self._azar.random() < 0.85:
+            matriz = textura_termica(matriz, self._azar)
         return matriz, mascara
 
 

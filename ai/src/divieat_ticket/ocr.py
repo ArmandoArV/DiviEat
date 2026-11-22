@@ -567,7 +567,15 @@ class SegmentadorPorMotorOCR(Segmentador):
         incluye, y entrenar con esa discrepancia ensena a inventar cantidades.
         Un renglon de ticket ocupa el ancho del papel: se usa la union.
         """
+        # Percentiles, no minimo y maximo: una sola caja mal detectada —el
+        # canto del papel, una sombra— arrastra el borde y mete una columna
+        # oscura en todos los recortes, que el reconocedor acaba leyendo como
+        # un caracter al inicio de cada renglon.
         margen = 6
-        x0 = max(0, min(c.x for c in cajas) - margen)
-        x1 = min(imagen.ancho, max(c.x + c.ancho for c in cajas) + margen)
+        izquierdas = sorted(c.x for c in cajas)
+        derechas = sorted(c.x + c.ancho for c in cajas)
+        x0 = max(0, int(np.percentile(izquierdas, 10)) - margen)
+        x1 = min(imagen.ancho, int(np.percentile(derechas, 90)) + margen)
+        if x1 - x0 < 32:
+            x0, x1 = min(izquierdas), max(derechas)
         return [CajaTexto(x0, c.y, x1 - x0, c.alto, c.angulo) for c in cajas]

@@ -8,14 +8,14 @@ from divieat_ticket.modelo.entrenamiento import (
 )
 from divieat_ticket.modelo.graficas import DiagnosticoDeSobreajuste, GraficadorDeAprendizaje
 
-modelo, alfabeto, _ = EntrenadorCRNN.cargar_modelo("modelos/crnn_v2_final.pt")
+modelo, alfabeto, _ = EntrenadorCRNN.cargar_modelo("modelos/crnn_termico.pt")
 config = ConfiguracionEntrenamiento(
-    epocas=16, tamano_lote=16, tasa_aprendizaje=1e-4, paciencia=6,
-    ruta_checkpoint=Path("modelos/crnn_real.pt"),
+    epocas=24, tamano_lote=16, tasa_aprendizaje=1e-4, paciencia=6,
+    ruta_checkpoint=Path("modelos/crnn_real_termico.pt"),
 )
 entrenador = EntrenadorCRNN(
     modelo=modelo, alfabeto=alfabeto, config=config,
-    fuente=FuenteMixta("datos/corpus_reales", "datos/v2_corpus"),
+    fuente=FuenteMixta("datos/corpus_reales", "datos/v2_corpus", repeticiones=14),
 )
 entrenamiento, validacion, _ = entrenador.cargadores()
 print(f"entrenamiento {len(entrenamiento.dataset)} muestras · "

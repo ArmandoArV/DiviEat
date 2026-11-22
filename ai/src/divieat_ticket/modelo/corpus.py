@@ -16,6 +16,7 @@ tener el dato.
 from __future__ import annotations
 
 import json
+import random
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -126,9 +127,13 @@ class CorpusDeRenglones(Dataset):
         alfabeto: Alfabeto | None = None,
         desde: float = 0.0,
         hasta: float = 1.0,
+        aumentador: "AumentadorDeRecortes | None" = None,
     ) -> None:
         self.carpeta = Path(carpeta)
         self.alfabeto = alfabeto or Alfabeto.de_tickets()
+        # Solo en entrenamiento: la validacion tiene que medir sobre el dato
+        # tal cual, o deja de ser comparable entre epocas.
+        self.aumentador = aumentador
         registros = [
             json.loads(linea)
             for linea in (self.carpeta / "etiquetas.jsonl").read_text(encoding="utf-8").splitlines()
@@ -143,6 +148,76 @@ class CorpusDeRenglones(Dataset):
     def __getitem__(self, indice: int) -> tuple[torch.Tensor, torch.Tensor, str]:
         registro = self.registros[indice]
         gris = cv2.imread(str(self.carpeta / registro["imagen"]), cv2.IMREAD_GRAYSCALE)
+        if self.aumentador is not None:
+            gris = self.aumentador.aplicar(gris)
         texto = self.alfabeto.limpiar(registro["texto"])
         tensor = torch.from_numpy(1.0 - gris.astype(np.float32) / 255.0).unsqueeze(0)
         return tensor, torch.tensor(self.alfabeto.codificar(texto), dtype=torch.long), texto
+
+
+class AumentadorDeRecortes:
+    """Varia un recorte en cada epoca para que repetirlo no sea memorizarlo.
+
+    Con un centenar de recortes reales, repetirlos identicos ocho veces lleva
+    la perdida de entrenamiento a cero y la de validacion a ninguna parte: la
+    red aprende esas imagenes, no la tarea. Aqui cada repeticion llega distinta
+    —inclinada, mas gruesa, mas oscura, con otro ruido— asi que el modelo tiene
+    que quedarse con lo que no cambia: las letras.
+
+    Las deformaciones son pequenas a proposito. Un renglon de ticket esta ya
+    enderezado y recortado por el segmentador; lo que varia en la realidad es
+    la tinta, la luz y el grano, no la geometria.
+    """
+
+    def __init__(self, intensidad: float = 1.0) -> None:
+        self.intensidad = intensidad
+
+    def aplicar(self, gris: np.ndarray, azar: "random.Random | None" = None) -> np.ndarray:
+        import random as _random
+
+        azar = azar or _random.Random()
+        matriz = gris
+        if azar.random() < 0.5:
+            matriz = self._inclinar(matriz, azar)
+        if azar.random() < 0.45:
+            matriz = self._estirar(matriz, azar)
+        if azar.random() < 0.4:
+            matriz = self._peso_de_tinta(matriz, azar)
+        if azar.random() < 0.5:
+            matriz = self._iluminacion(matriz, azar)
+        if azar.random() < 0.45:
+            matriz = self._desenfoque(matriz, azar)
+        if azar.random() < 0.5:
+            matriz = self._ruido(matriz, azar)
+        return matriz
+
+    def _inclinar(self, matriz, azar):
+        alto, ancho = matriz.shape
+        angulo = azar.uniform(-1.2, 1.2) * self.intensidad
+        rotacion = cv2.getRotationMatrix2D((ancho / 2, alto / 2), angulo, 1.0)
+        return cv2.warpAffine(matriz, rotacion, (ancho, alto), flags=cv2.INTER_LINEAR,
+                              borderMode=cv2.BORDER_REPLICATE)
+
+    def _estirar(self, matriz, azar):
+        """El ancho de caracter cambia entre impresoras y entre fotos."""
+        alto, ancho = matriz.shape
+        factor = 1.0 + azar.uniform(-0.06, 0.10) * self.intensidad
+        nuevo = max(8, min(ANCHO_MAXIMO, int(ancho * factor)))
+        return cv2.resize(matriz, (nuevo, alto), interpolation=cv2.INTER_LINEAR)
+
+    def _peso_de_tinta(self, matriz, azar):
+        nucleo = np.ones((2, 2), np.uint8)
+        return (cv2.erode if azar.random() < 0.5 else cv2.dilate)(matriz, nucleo)
+
+    def _iluminacion(self, matriz, azar):
+        alfa = 1.0 + azar.uniform(-0.25, 0.25) * self.intensidad
+        beta = azar.uniform(-25, 25) * self.intensidad
+        return np.clip(matriz.astype(np.float32) * alfa + beta, 0, 255).astype(np.uint8)
+
+    def _desenfoque(self, matriz, azar):
+        return cv2.GaussianBlur(matriz, (3, 3), azar.uniform(0.2, 0.9))
+
+    def _ruido(self, matriz, azar):
+        sigma = azar.uniform(3, 14) * self.intensidad
+        ruido = np.random.default_rng(azar.randrange(2**32)).normal(0, sigma, matriz.shape)
+        return np.clip(matriz.astype(np.float32) + ruido, 0, 255).astype(np.uint8)

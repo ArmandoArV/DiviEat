@@ -107,10 +107,12 @@ class FuenteMixta(FuenteDeDatos):
     def cargadores(self, config, alfabeto):
         from torch.utils.data import ConcatDataset, Subset
 
-        from divieat_ticket.modelo.corpus import CorpusDeRenglones
+        from divieat_ticket.modelo.corpus import AumentadorDeRecortes, CorpusDeRenglones
 
         corte = 1.0 - self.fraccion_validacion
-        real_entrenamiento = CorpusDeRenglones(self.carpeta_real, alfabeto, hasta=corte)
+        real_entrenamiento = CorpusDeRenglones(
+            self.carpeta_real, alfabeto, hasta=corte, aumentador=AumentadorDeRecortes()
+        )
         real_validacion = CorpusDeRenglones(self.carpeta_real, alfabeto, desde=corte)
         sinteticos = CorpusDeRenglones(self.carpeta_sintetica, alfabeto)
         muestra = Subset(sinteticos, range(min(self.sinteticos, len(sinteticos))))
