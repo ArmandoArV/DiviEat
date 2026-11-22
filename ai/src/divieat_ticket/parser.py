@@ -115,9 +115,12 @@ class ClasificadorHeuristico(ClasificadorDeLineas):
 
     _SEPARADOR = re.compile(r"^[-=_*~.\s]{6,}$")
     _ENC_TABLA = re.compile(r"CANT\.?\s*DESCRIPCION", re.IGNORECASE)
+    # La clave puede ir a media linea: «Comensales: 3    Mesa: 25». Se exige
+    # el separador «:» o «#», que es lo que distingue un dato del POS de una
+    # descripcion de producto.
     _METADATO = re.compile(
-        r"^\s*(MESA|MESERO|PERSONAS|ORDEN|FOLIO|CAJERO|CLIENTE|TURNO|CAJA|RFC|TEL|SUCURSAL"
-        r"|CODIGO\s+FACT|DIAS\s+VIGENCIA)\b",
+        r"\b(MESA|MESERO|PERSONAS|COMENSALES|ORDEN|FOLIO|CAJERO|CLIENTE|TURNO|CAJA|RFC"
+        r"|TEL|SUCURSAL|CODIGO\s+FACT|DIAS\s+VIGENCIA|AMBIENTES)\s*(?:NO\.?|N[°º])?\s*[:#]",
         re.IGNORECASE,
     )
     _DIRECCION = re.compile(r"\bC\.?P\.?\s*\d{5}\b", re.IGNORECASE)
@@ -150,10 +153,13 @@ class ClasificadorHeuristico(ClasificadorDeLineas):
             return TipoLinea.SUBTOTAL
         if self._PROPINA.search(limpio):
             return TipoLinea.NOTA if self._SIN_PROPINA.search(limpio) else TipoLinea.PROPINA
-        if self._IMPUESTO.search(limpio):
-            return TipoLinea.IMPUESTO
+        # El total va antes que el impuesto: «(=)Total C/Iva($)» significa
+        # «total con IVA incluido», no un renglon de impuesto. Al reves, la
+        # linea suelta «IVA: $219.31` no dice TOTAL y sigue cayendo abajo.
         if self._TOTAL.search(limpio):
             return TipoLinea.TOTAL
+        if self._IMPUESTO.search(limpio):
+            return TipoLinea.IMPUESTO
         if self._UNITARIO.search(limpio):
             return TipoLinea.UNITARIO
         if self._NOTA.search(limpio):
@@ -208,7 +214,9 @@ class LectorDeMetadatos:
     """Saca mesa, comensales, folio y fecha del bloque de cabecera."""
 
     _MESA = re.compile(r"\bMESA\s*[:.]?\s*(?P<valor>[A-Z0-9][A-Z0-9-]{0,9})", re.IGNORECASE)
-    _PERSONAS = re.compile(r"\bPERSONAS\s*[:.]?\s*(?P<valor>\d{1,2})", re.IGNORECASE)
+    _PERSONAS = re.compile(
+        r"\b(?:PERSONAS|COMENSALES)\s*[:.]?\s*(?P<valor>\d{1,2})", re.IGNORECASE
+    )
     _FOLIO = re.compile(
         r"\bFOLIO\s*(?:NO\.?|N[°º]|#)?\s*[:.]?\s*(?P<valor>[A-Z0-9][A-Z0-9-]{2,})",
         re.IGNORECASE,

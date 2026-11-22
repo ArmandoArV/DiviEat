@@ -68,7 +68,13 @@ class PerfilSoftRestaurant(PerfilDeTicket):
     def puntaje(self, lineas: Sequence[str]) -> float:
         texto = "\n".join(lineas)
         encontradas = sum(1 for huella in self.HUELLAS if huella.search(texto))
-        return encontradas / len(self.HUELLAS)
+        base = encontradas / len(self.HUELLAS)
+        if not self.ENCABEZADO_TABLA.search(texto):
+            # Sin su encabezado de tabla este perfil no puede acotar el bloque
+            # de productos, que es justamente lo que aporta. Marcas sueltas
+            # como «Mesero:» las comparte con otros POS.
+            base *= 0.35
+        return base
 
     def localizar_productos(self, lineas: Sequence[str]) -> BloqueDeProductos | None:
         inicio = fin = None
@@ -117,6 +123,47 @@ class PerfilMiyabi(PerfilDeTicket):
         return BloqueDeProductos(inicio, fin if fin is not None else len(lineas))
 
 
+class PerfilTablaGenerica(PerfilDeTicket):
+    """Cualquier POS que imprima una tabla con encabezado y un total al cierre.
+
+    Cubre las cajas que no son SOFT RESTAURANT pero si estructuran el consumo:
+    «Descripcion (Cantidad*Precio) TOTAL» cerrando con «(=)Total C/Iva($)».
+    Lo que importa no es la marca del POS sino que exista un encabezado y una
+    linea de cierre: con eso el bloque de productos queda acotado igual.
+    """
+
+    ENCABEZADO_TABLA = re.compile(
+        r"(DESCRIPCION|DESCRIPCIÓN|CONCEPTO|ARTICULO).*(IMPORTE|TOTAL|PRECIO|CANTIDAD)",
+        re.IGNORECASE,
+    )
+    CIERRE = re.compile(r"^[\s(=)]*(TOTAL|SUBTOTAL|IMPORTE\s+TOTAL)\b", re.IGNORECASE)
+
+    def puntaje(self, lineas: Sequence[str]) -> float:
+        texto = "\n".join(lineas)
+        if not self.ENCABEZADO_TABLA.search(texto):
+            return 0.0
+        marcas = [
+            True,                                                      # encabezado
+            any(self.CIERRE.search(l) for l in lineas),                # cierre
+            re.search(r"\bMES(A|ERO)\b", texto, re.IGNORECASE) is not None,
+        ]
+        # Es un respaldo, no un competidor: tiene que ceder ante un perfil
+        # especifico que si reconozca su POS, pero ganarle al generico.
+        return 0.30 + 0.10 * sum(marcas[1:])
+
+    def localizar_productos(self, lineas: Sequence[str]) -> BloqueDeProductos | None:
+        inicio = fin = None
+        for indice, linea in enumerate(lineas):
+            if inicio is None and self.ENCABEZADO_TABLA.search(linea):
+                inicio = indice + 1
+            elif inicio is not None and self.CIERRE.search(linea):
+                fin = indice
+                break
+        if inicio is None:
+            return None
+        return BloqueDeProductos(inicio, fin if fin is not None else len(lineas))
+
+
 class PerfilGenerico(PerfilDeTicket):
     """Ultimo recurso: sin estructura conocida, decide la heuristica por linea."""
 
@@ -132,7 +179,7 @@ class DetectorDePerfil:
 
     def __init__(self, perfiles: Sequence[PerfilDeTicket] | None = None) -> None:
         self.perfiles = list(perfiles) if perfiles else [
-            PerfilSoftRestaurant(), PerfilMiyabi(), PerfilGenerico()
+            PerfilSoftRestaurant(), PerfilMiyabi(), PerfilTablaGenerica(), PerfilGenerico()
         ]
 
     def detectar(self, lineas: Sequence[str]) -> tuple[PerfilDeTicket, float]:
