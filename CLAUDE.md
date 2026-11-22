@@ -149,6 +149,109 @@ No conviertas esos guiones en negativos.
 - De la hoja de marca faltan: área de respeto, tamaño mínimo, tira de app icon/favicon y
   usos incorrectos.
 
+## El modulo de IA (`ai/`)
+
+Lectura de tickets: foto -> productos estructurados. Python 3.13 en `ai/.venv`
+(PyTorch no tiene ruedas para 3.14 todavia). Todo el codigo es OOP y en espanol,
+siguiendo el estilo de `Maestria-IA/RecuperacionDeInformacion`.
+
+```
+ai/src/divieat_ticket/
+  dominio.py       Dinero (centavos enteros), Producto, TicketExtraido
+  imagen.py        Imagen: unico punto de contacto con OpenCV
+  preproceso.py    OperacionImagen (ABC) -> escalado, ruido, perspectiva,
+                   enderezado, binarizacion + CadenaDePreproceso (composite)
+  sintetico.py     genera tickets con verdad de referencia + 5 degradaciones
+  ocr.py           MotorOCR (ABC) -> Tesseract | EasyOCR | CRNN | Referencia
+                   + SegmentadorDeLineas (perfil de proyeccion)
+  perfiles.py      PerfilDeTicket (ABC) -> SoftRestaurant | Miyabi | Generico
+  parser.py        NormalizadorOCR, ClasificadorDeLineas (ABC),
+                   ExtractorDeProductos, LectorDeMetadatos, AnalizadorDeTicket
+  pipeline.py      PipelineExtraccionTicket
+  evaluacion.py    ComparadorDeProductos, EvaluadorDeExtraccion
+  modelo/          alfabeto, crnn (CNN+BiLSTM), ctc, datos, entrenamiento, metricas
+  cli.py           motores | generar | extraer | fixtures | evaluar
+```
+
+Comandos (desde `ai/`, con `PYTHONPATH=src`):
+`python -m divieat_ticket.cli fixtures` · `... evaluar` · `... extraer foto.jpg`
+
+### Decisiones que costaron hallazgos reales
+
+- **El cuadre va contra el TOTAL, no contra el SUBTOTAL.** En Mexico el precio
+  de carta ya incluye IVA: en los tickets reales `SUBTOTAL + IVA = TOTAL` y la
+  suma de los renglones da el TOTAL. El SUBTOTAL es la base gravable. Si la
+  propina viene dentro del total, se descuenta.
+- **SOFT RESTAURANT es el POS mas comun de Mexico.** Por eso `perfiles.py`
+  detecta la plantilla y toma como productos solo lo que esta entre el
+  encabezado `CANT. DESCRIPCION` y la linea `TOTAL:`. Esa regla estructural
+  elimina los falsos positivos (`EXICO CP 97302`, `MESA:2Y7`, `ORDEN NO. 29`
+  y, sobre todo, `IVA: $219.31`, que sumado rompia el total).
+- **La normalizacion del OCR depende del contexto**: en un numero `S`->5, en una
+  palabra `0`->O. Los tokens `CLAVE:valor` (`MESA:2Y7`) se dejan intactos.
+- **El dinero son centavos enteros.** Nunca float: el cuadre es lo que decide
+  si la pantalla «Revisar lo detectado» sale en verde o en ambar.
+
+### Segmentacion de renglones: lo que costo descubrir
+
+El reconocedor dejo de ser el cuello de botella muy pronto. Medido:
+
+| | |
+|---|---|
+| CRNN en renglones renderizados limpios | CER 0.0090 |
+| CRNN base sobre recortes del pipeline | CER 0.2718 (salto de dominio 30x) |
+| CRNN tras ajuste fino en recortes del pipeline | CER 0.0154 · 94.8% renglones exactos · 97.4% importes |
+
+Con 95% de renglones correctos el sistema completo daba F1 0.47, y la razon
+era la **segmentacion**: solo el 47% de los tickets quedaba con el numero
+exacto de renglones. Diagnostico por pasos:
+
+1. La hipotesis inicial (fusion de renglones) era **falsa**: 2/30 tickets
+   fusionaban, 15/30 **partian**. Mirar la imagen con las cajas dibujadas fue
+   lo que lo revelo; las cifras solas apuntaban al lado contrario.
+2. La causa era geometrica: ~1.5 grados de inclinacion residual separaban la
+   descripcion de su importe en bandas distintas. `Enderezado` estimaba el
+   angulo con `minAreaRect` sobre toda la tinta y el borde del papel lo
+   arruinaba. Se reemplazo por `EnderezadoPorProyeccion`, que busca el angulo
+   que maximiza la varianza del perfil de proyeccion (metodo clasico de
+   documentos, inmune al borde).
+3. Las reglas de guiones se contaban como renglones: `+2` sistematico.
+   `SegmentadorMorfologico._descartar_reglas` las filtra por altura relativa.
+
+Eso llevo 47% -> 55%. De ahi en adelante la via clasica da rendimientos
+decrecientes y entra la U-Net (`modelo/segmentacion.py`).
+
+**Por que U-Net normal y no Attention U-Net**: las compuertas de atencion de
+Oktay existen para suprimir un fondo grande e irrelevante (imagen medica).
+Aqui el texto es de alto contraste y ocupa toda la hoja: no hay nada que
+suprimir, y el costo extra de parametros no compra nada. Lo que decide el
+resultado no es la arquitectura sino **que predice la red**: mascaras del
+*nucleo* del renglon, encogidas al 50% vertical y de ancho completo. Asi dos
+renglones contiguos nunca se tocan (no hay fusion) y descripcion e importe
+caen en la misma componente aunque medien 600 px (no hay particion). Los dos
+modos de falla desaparecen por construccion.
+
+La supervision es gratis y exacta: `sintetico.mascara_de_renglones` pinta las
+bandas y las degradaciones geometricas las transportan con la **misma**
+homografia que la imagen.
+
+### Estilo de importes
+
+Los cinco tickets reales imprimen `$` en todos los importes y el generador no
+lo hacia: la CRNN se entreno un tiempo con una distribucion inexistente.
+`EstiloDeImporte` lo corrige con tres variantes (pegado `$160.00`, columna
+`$     75.00`, sin simbolo) constantes dentro de un mismo ticket, como hace un
+POS real.
+
+### Datos y evaluacion
+
+No existe corpus publico de tickets mexicanos, asi que `sintetico.py` los
+fabrica con verdad exacta y `modelo/datos.py` genera renglones sueltos para
+entrenar la CRNN. Los tickets reales estan transcritos en
+`ai/tests/fixtures_reales.py` (Miyabi, Marcelo, Avelino) y son el test de
+aceptacion del parser. **Las fotos originales estan en `.gitignore`**: son
+tickets reales con folio y nombre de mesero.
+
 ## Trabajar el Figma desde Claude Code
 
 El MCP de Figma está conectado. Carga la skill `figma-use` **antes** de cualquier

@@ -1,0 +1,11 @@
+# Entorno
+.venv/
+__pycache__/
+*.pyc
+
+# Pesos entrenados (68 MB+): se regeneran con tuberia_completa.py
+modelos/
+*.pt
+
+# Datos generados y fotos reales de tickets (privadas: traen folio y mesero)
+datos/
