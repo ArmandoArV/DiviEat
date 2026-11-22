@@ -103,12 +103,15 @@ class PerfilMiyabi(PerfilDeTicket):
         texto = "\n".join(lineas)
         if PerfilSoftRestaurant().puntaje(lineas) > 0.5:
             return 0.0
+        if not self.ENCABEZADO_TABLA.search(texto):
+            # Igual que SOFT: sin su encabezado no puede acotar el bloque, que
+            # es lo unico que aporta. Un RFC lo lleva cualquier ticket mexicano.
+            return 0.0
         marcas = [
-            self.ENCABEZADO_TABLA.search(texto) is not None,
             re.search(r"\bRFC\b", texto, re.IGNORECASE) is not None,
             re.search(r"^\s*IVA\s*:", texto, re.IGNORECASE | re.MULTILINE) is not None,
         ]
-        return sum(marcas) / len(marcas)
+        return 0.6 + 0.2 * sum(marcas)
 
     def localizar_productos(self, lineas: Sequence[str]) -> BloqueDeProductos | None:
         inicio = fin = None

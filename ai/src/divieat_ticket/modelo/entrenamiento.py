@@ -77,6 +77,53 @@ class FuenteCorpus(FuenteDeDatos):
         )
 
 
+class FuenteMixta(FuenteDeDatos):
+    """Mezcla recortes reales con sinteticos.
+
+    Los reales son pocos (un centenar) y los sinteticos ilimitados. Entrenar
+    solo con los reales sobreajustaria en dos epocas; entrenar solo con
+    sinteticos es justo lo que ya se probo y no transfiere. Se repiten los
+    reales para que pesen lo suficiente sin que el modelo olvide la variedad
+    que aportan los sinteticos.
+
+    La validacion es **solo real**: es la unica cifra que dice algo sobre el
+    problema de verdad.
+    """
+
+    def __init__(
+        self,
+        carpeta_real: str | Path,
+        carpeta_sintetica: str | Path,
+        repeticiones: int = 8,
+        sinteticos: int = 2000,
+        fraccion_validacion: float = 0.18,
+    ) -> None:
+        self.carpeta_real = carpeta_real
+        self.carpeta_sintetica = carpeta_sintetica
+        self.repeticiones = repeticiones
+        self.sinteticos = sinteticos
+        self.fraccion_validacion = fraccion_validacion
+
+    def cargadores(self, config, alfabeto):
+        from torch.utils.data import ConcatDataset, Subset
+
+        from divieat_ticket.modelo.corpus import CorpusDeRenglones
+
+        corte = 1.0 - self.fraccion_validacion
+        real_entrenamiento = CorpusDeRenglones(self.carpeta_real, alfabeto, hasta=corte)
+        real_validacion = CorpusDeRenglones(self.carpeta_real, alfabeto, desde=corte)
+        sinteticos = CorpusDeRenglones(self.carpeta_sintetica, alfabeto)
+        muestra = Subset(sinteticos, range(min(self.sinteticos, len(sinteticos))))
+
+        entrenamiento = ConcatDataset([real_entrenamiento] * self.repeticiones + [muestra])
+        comun = dict(collate_fn=agrupar_lote, num_workers=config.trabajadores)
+        return (
+            DataLoader(entrenamiento, batch_size=config.tamano_lote, shuffle=True, **comun),
+            DataLoader(real_validacion, batch_size=config.tamano_lote, **comun),
+            DataLoader(real_entrenamiento, batch_size=config.tamano_lote, **comun),
+        )
+
+
 @dataclass
 class ConfiguracionEntrenamiento:
     epocas: int = 8

@@ -374,3 +374,47 @@ URUGUAYO = TicketReal(
 )
 
 TODOS = (MIYABI, MARCELO, AVELINO, CHILANGUITA, BRAAIASAO, ALLOMONCOCO, ATARANTADOS, URUGUAYO)
+
+
+TIERRAGARAT = TicketReal(
+    nombre="tierragarat",
+    pos="PerfilGenerico",
+    productos_esperados=2,
+    total_esperado_centavos=9500,
+    mesa_esperada="201/1",
+    comensales_esperados=None,
+    lineas=(
+        "TIERRA GARAT SUCURSAL RODRIGUEZ SARO",
+        "Rodriguez Saro, Azcatas No.300",
+        "Benito Juarez CDMX 3100",
+        "",
+        "Mesero: Rappi                         18/09/2024",
+        "Mesa 201/1                               4:12 PM",
+        "CAC CRIOLLO GD                             83.00",
+        "CREMA BATIDA                               12.00",
+        "Subtotal                               95.00",
+        "Total                                  95.00",
+        "Rappi                                  95.00",
+        "Pendiente de Pago                       0.00",
+        "        I.V.A. incluido",
+        "    Cuenta cerrada",
+        "Puede solicitar su factura a traves de nuestro portal",
+        "        www.tierragarat.mx",
+        "durante el mes en curso en el cual realizo su compra.",
+        "Datos de facturacion",
+        "Sucursal: Rodriguez Saro",
+        "Fecha :18/09/2024",
+        "Ticket #10225",
+        "Red Wifi Tierra Garat Rodriguez Saro",
+        "Contrasena      TierradeCafe",
+        "Datos fiscales de la empresa",
+        "Operadora Coffee Shop Garat S.A. de C.V.",
+        "RFC: OCS1220233AZ4",
+        "Calz. De la vilga 1214  Col. Apatlaco",
+        "Alc. Iztapalapa CDMX CP-09430",
+        "Sugerencias: contacto@tierragarat.mx",
+    ),
+)
+
+TODOS = (MIYABI, MARCELO, AVELINO, CHILANGUITA, BRAAIASAO, ALLOMONCOCO,
+         ATARANTADOS, URUGUAYO, TIERRAGARAT)
