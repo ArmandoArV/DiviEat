@@ -12,8 +12,8 @@ from fixtures_reales import MARCELO, AVELINO
 
 VERDAD = {"marcelo": MARCELO, "avelino": AVELINO}
 motores = [
-    ("CRNN+U-Net", MotorCRNN("modelos/crnn_final.pt",
-                             segmentador=SegmentadorNeuronal("modelos/unet_final.pt"))),
+    ("CRNN+U-Net v2", MotorCRNN("modelos/crnn_v2_final.pt",
+                             segmentador=SegmentadorNeuronal("modelos/unet_v2.pt"))),
     ("EasyOCR", MotorEasyOCR()),
 ]
 

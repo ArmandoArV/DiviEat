@@ -97,8 +97,19 @@ class CatalogoMexicano:
         "TAQUERIA LOS COMPAS", "COCINA DE HUMO",
     )
     CALLES: tuple[str, ...] = (
-        "AV. REVOLUCION 120", "CALZ. DE TLALPAN 455", "AV. INSURGENTES SUR 1702",
-        "CALLE 5 DE MAYO 23", "BLVD. DIAZ ORDAZ 88",
+        "AV. REVOLUCION 120 COL. CENTRO MERIDA YUCATAN MEXICO CP 97000",
+        "CALZ. DE TLALPAN 455 COL. PORTALES CIUDAD DE MEXICO CP 03300",
+        "CALLE 56 A NO. 469 ENTRE 35 Y 37 COL. CENTRO MERIDA YUCATAN CP 97000",
+        "AV. DIEGO DE ORDAZ 22 COL. REAL DE SAN JOSE JIUTEPEC MORELOS CP 62563",
+        "PRIVADA SINALOA NUM.1, AVENIDA SAN DIEGO, COLONIA VISTA HERMOSA CP 62290",
+    )
+    RAZONES: tuple[str, ...] = (
+        "OPERADORA MONTES MOLINA", "GRUPO GUAVOS", "RESTAURANTES DEL SURESTE S.A. DE C.V.",
+        "ALIMENTOS Y SERVICIOS SA DE CV", "GRUPO GASTRONOMICO PENINSULAR",
+    )
+    MESEROS: tuple[str, ...] = (
+        "MAHOL", "DIEGO BRISENO", "LETICIA ARCADEO MEJIA", "71 RICARDO", "LUIS",
+        "ANA LOPEZ", "J. CARLOS", "MARTHA R",
     )
 
     def __init__(self, azar: random.Random) -> None:
@@ -136,8 +147,7 @@ class RenderizadorTicket:
         )
 
     def lineas_de_texto(
-        self, ticket: TicketExtraido, direccion: str = "",
-        estilo: "EstiloDeImporte | None" = None,
+        self, ticket: TicketExtraido, contexto, estilo=None, plantilla=None
     ) -> list[str]:
         """Los renglones que se van a imprimir, en orden y sin los vacios.
 
@@ -147,7 +157,7 @@ class RenderizadorTicket:
         """
         return [
             texto
-            for texto, _, _ in self._componer(ticket, direccion, estilo)
+            for texto, _, _ in self._componer(ticket, contexto, estilo, plantilla)
             if texto.strip() and not self._es_separador(texto)
         ]
 
@@ -159,29 +169,12 @@ class RenderizadorTicket:
         return bool(limpio) and set(limpio) <= set("-=_~.")
 
     def renderizar(
-        self, ticket: TicketExtraido, direccion: str = "",
-        estilo: "EstiloDeImporte | None" = None,
+        self, ticket: TicketExtraido, contexto, estilo=None, plantilla=None
     ) -> Image.Image:
-        lineas = self._componer(ticket, direccion, estilo)
-        alto = self.config.margen * 2 + self.config.interlineado * len(lineas)
-        lienzo = Image.new("L", (self.config.ancho_papel, alto), color=250)
-        pincel = ImageDraw.Draw(lienzo)
-
-        y = self.config.margen
-        for texto, centrado, titulo in lineas:
-            fuente = self.fuente_titulo if titulo else self.fuente
-            if centrado:
-                ancho_texto = pincel.textlength(texto, font=fuente)
-                x = (self.config.ancho_papel - ancho_texto) / 2
-            else:
-                x = self.config.margen
-            pincel.text((x, y), texto, font=fuente, fill=25)
-            y += self.config.interlineado
-        return lienzo
+        return self.renderizar_con_cajas(ticket, contexto, estilo, plantilla)[0]
 
     def renderizar_con_cajas(
-        self, ticket: TicketExtraido, direccion: str = "",
-        estilo: "EstiloDeImporte | None" = None,
+        self, ticket: TicketExtraido, contexto, estilo=None, plantilla=None
     ) -> tuple[Image.Image, list[tuple[int, int, int, int]]]:
         """Dibuja el ticket y devuelve la caja (x, y, ancho, alto) de cada renglon.
 
@@ -189,7 +182,7 @@ class RenderizadorTicket:
         guiones y los vacios quedan fuera, igual que en `lineas_de_texto`. Es
         la supervision a nivel pixel para la segmentacion.
         """
-        lineas = self._componer(ticket, direccion, estilo)
+        lineas = self._componer(ticket, contexto, estilo, plantilla)
         alto = self.config.margen * 2 + self.config.interlineado * len(lineas)
         lienzo = Image.new("L", (self.config.ancho_papel, alto), color=250)
         pincel = ImageDraw.Draw(lienzo)
@@ -207,58 +200,17 @@ class RenderizadorTicket:
             y += self.config.interlineado
         return lienzo, cajas
 
+    def _componer(self, ticket, contexto, estilo, plantilla):
+        from divieat_ticket.plantillas import PlantillaGenerica
 
-    def _componer(
-        self, ticket: TicketExtraido, direccion: str,
-        estilo: "EstiloDeImporte | None" = None,
-    ) -> list[tuple[str, bool, bool]]:
-        """Devuelve [(texto, centrado, es_titulo)] en el orden del papel."""
         estilo = estilo or EstiloDeImporte(EstiloDeImporte.PEGADO)
-        ancho = self._columnas()
-        filas: list[tuple[str, bool, bool]] = [
-            (ticket.restaurante or "RESTAURANTE", True, True),
-            (direccion, True, False),
-            ("", False, False),
-        ]
-        if ticket.fecha:
-            filas.append((f"{ticket.fecha:%d/%m/%Y %H:%M}", False, False))
-        if ticket.folio:
-            filas.append((f"FOLIO {ticket.folio}", False, False))
-        filas.append(("-" * ancho, False, False))
-
-        for producto in ticket.productos:
-            unitario = producto.precio_unitario or producto.importe
-            etiqueta = f"{producto.cantidad} {producto.descripcion}"
-            importe = estilo.formatear(producto.importe)
-            filas.append((self._dos_columnas(etiqueta, importe, ancho), False, False))
-            if producto.cantidad > 1:
-                filas.append((f"    @ {unitario.pesos:,.2f} c/u", False, False))
-
-        filas.append(("-" * ancho, False, False))
-        if ticket.subtotal:
-            filas.append(
-                (self._dos_columnas("SUBTOTAL", estilo.formatear(ticket.subtotal), ancho), False, False)
-            )
-        if ticket.propina:
-            filas.append(
-                (self._dos_columnas("PROPINA SUGERIDA", estilo.formatear(ticket.propina), ancho), False, False)
-            )
-        if ticket.total_impreso:
-            filas.append(
-                (self._dos_columnas("TOTAL", estilo.formatear(ticket.total_impreso), ancho), False, False)
-            )
-        filas.extend([("", False, False), ("GRACIAS POR SU VISITA", True, False)])
-        return filas
+        plantilla = plantilla or PlantillaGenerica()
+        return plantilla.componer(ticket, contexto, estilo, self._columnas())
 
     def _columnas(self) -> int:
         util = self.config.ancho_papel - self.config.margen * 2
         ancho_caracter = self.fuente.getlength("M") or 10
         return max(24, int(util / ancho_caracter))
-
-    @staticmethod
-    def _dos_columnas(izquierda: str, derecha: str, ancho: int) -> str:
-        espacio = max(1, ancho - len(izquierda) - len(derecha))
-        return f"{izquierda}{' ' * espacio}{derecha}"
 
 
 class Degradacion:
@@ -277,6 +229,25 @@ class Degradacion:
         """Devuelve (imagen, mascara). Las degradaciones fotometricas no tocan
         la mascara; las geometricas le aplican la misma transformacion."""
         raise NotImplementedError
+
+
+class TintaTermica(Degradacion):
+    """Imita la impresion termica: trazo que engorda o se adelgaza.
+
+    La cabeza termica marca mas o menos segun la temperatura y lo gastado del
+    papel. Es la diferencia visible entre una fuente renderizada limpia y un
+    ticket de verdad, y es justo donde la red entrenada solo con texto
+    renderizado dejaba de transferir.
+    """
+
+    def aplicar(self, matriz, mascara=None):
+        eleccion = self._azar.random()
+        nucleo = np.ones((2, 2), np.uint8)
+        if eleccion < 0.4:
+            matriz = cv2.erode(matriz, nucleo)        # trazo grueso (tinta de mas)
+        elif eleccion < 0.7:
+            matriz = cv2.dilate(matriz, nucleo)       # trazo debil (papel gastado)
+        return matriz, mascara
 
 
 class SombraDespareja(Degradacion):
@@ -376,13 +347,25 @@ class GeneradorTicketsSinteticos:
         self._catalogo = CatalogoMexicano(self._azar)
         self._renderizador = RenderizadorTicket(self.config)
         self._degradaciones = [
-            SombraDespareja(self._azar), DesenfoqueDeCamara(self._azar),
-            PerspectivaDeMesa(self._azar), RuidoDeSensor(self._azar),
-            CompresionJPEG(self._azar),
+            TintaTermica(self._azar), SombraDespareja(self._azar),
+            DesenfoqueDeCamara(self._azar), PerspectivaDeMesa(self._azar),
+            RuidoDeSensor(self._azar), CompresionJPEG(self._azar),
         ]
+        from divieat_ticket.plantillas import CatalogoDePlantillas
 
-    def ticket(self) -> tuple[TicketExtraido, str]:
-        """Construye la verdad de referencia; los importes cuadran por construccion."""
+        self._plantillas = CatalogoDePlantillas(self._azar)
+
+    def ticket(self) -> tuple[TicketExtraido, "ContextoDeTicket"]:
+        """Construye la verdad de referencia y el contexto que la rodea.
+
+        La aritmetica fiscal es la de los tickets reales: los precios de carta
+        ya incluyen IVA, asi que **la suma de los renglones es el TOTAL** y el
+        subtotal es la base gravable (total / 1.16). Lo contrario —subtotal
+        como suma de productos— fue el error que corrigieron los tickets de
+        Merida.
+        """
+        from divieat_ticket.plantillas import ContextoDeTicket
+
         nombre, direccion = self._catalogo.restaurante()
         cuantos = self._azar.randint(self.config.productos_min, self.config.productos_max)
         productos = []
@@ -397,31 +380,53 @@ class GeneradorTicketsSinteticos:
                     linea=indice,
                 )
             )
-        subtotal = Dinero.suma(p.importe for p in productos)
-        propina = (
-            Dinero(int(subtotal.centavos * 0.15))
-            if self._azar.random() < self.config.probabilidad_propina
-            else None
+        total = Dinero.suma(p.importe for p in productos)
+        base = Dinero(int(round(total.centavos / 1.16)))
+        apertura = datetime(2026, 1, 1, 12, 0) + timedelta(
+            days=self._azar.randrange(330), minutes=self._azar.randrange(700)
         )
-        fecha = datetime(2026, 1, 1, 12, 0) + timedelta(
-            days=self._azar.randrange(330), minutes=self._azar.randrange(600)
-        )
+        folio = str(self._azar.randrange(1000, 999999))
+
         ticket = TicketExtraido(
             productos=productos,
             restaurante=nombre,
-            fecha=fecha,
-            folio=f"A-{self._azar.randrange(1000, 9999)}",
-            subtotal=subtotal,
-            propina=propina,
-            total_impreso=subtotal + propina if propina else subtotal,
+            fecha=apertura,
+            folio=folio,
+            subtotal=base,
+            iva=total - base,
+            total_impreso=total,
         )
-        return ticket, direccion
+        contexto = ContextoDeTicket(
+            nombre=nombre,
+            direccion=direccion,
+            razon_social=self._azar.choice(CatalogoMexicano.RAZONES),
+            rfc=self._rfc(),
+            telefono=str(self._azar.randrange(9_000_000_000, 9_999_999_999)),
+            sucursal=direccion if self._azar.random() < 0.6 else "",
+            mesa=self._azar.choice(["2Y7", "SALA4", "33", "56", "A12", "7", "42"]),
+            mesero=self._azar.choice(CatalogoMexicano.MESEROS),
+            cajero="" if self._azar.random() < 0.7 else self._azar.choice(CatalogoMexicano.MESEROS),
+            comensales=self._azar.randint(1, 8),
+            orden=self._azar.randrange(1, 300),
+            apertura=apertura,
+            cierre=apertura + timedelta(minutes=self._azar.randrange(20, 120)),
+            version_pos=self._azar.choice(["10", "11", "12"]),
+            codigo_factura=f"{self._azar.randrange(10000, 99999)}LARAXGLF",
+            dias_vigencia=self._azar.choice(["7", "30", "ULTIMO DIA DEL MES"]),
+            sitio_factura=f"https://mefacturo.mx/{nombre.split()[-1].lower()}",
+        )
+        return ticket, contexto
+
+    def _rfc(self) -> str:
+        letras = "".join(self._azar.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ") for _ in range(3))
+        return f"{letras}{self._azar.randrange(100000, 999999)}{self._azar.choice('ABCDEFGHJKLMNP')}{self._azar.randrange(10, 99)}"
 
     def generar(self, degradar: bool = True) -> MuestraSintetica:
-        ticket, direccion = self.ticket()
+        ticket, contexto = self.ticket()
         estilo = EstiloDeImporte.elegir(self._azar)
-        renglones = self._renderizador.lineas_de_texto(ticket, direccion, estilo)
-        lienzo, cajas = self._renderizador.renderizar_con_cajas(ticket, direccion, estilo)
+        plantilla = self._plantillas.elegir()
+        renglones = self._renderizador.lineas_de_texto(ticket, contexto, estilo, plantilla)
+        lienzo, cajas = self._renderizador.renderizar_con_cajas(ticket, contexto, estilo, plantilla)
         papel = np.array(lienzo)
         limpia = Imagen(papel.copy())
         mascara = mascara_de_renglones(papel.shape, cajas)

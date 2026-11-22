@@ -32,98 +32,76 @@ class ConfiguracionLineas:
 
 
 class FabricaDeTextos:
-    """Produce textos plausibles de un renglon de ticket."""
+    """Produce renglones de ticket reales, componiendo con las mismas plantillas.
 
-    PLANTILLAS_NOTA = (
-        "SON:{palabras} PESOS 00/100 M",
-        "GRACIAS POR SU VISITA",
-        "ESTE NO ES UN COMPROBANTE FISCAL",
-        "PROPINA NO INCLUIDA",
-        "LUGAR DE EXPEDICION",
-        "CODIGO FACT: {codigo}",
-        "DIAS VIGENCIA: {dias}",
-        "***SOFT RESTAURANT V{version} PRO***",
-        "https://mefacturo.mx/{slug}",
-        "Si requiere factura, escanee el codigo QR o",
-    )
-    PALABRAS_MONTO = (
-        "UN MIL CIENTO SETENTA Y CINCO", "CUATROCIENTOS VEINTIDOS",
-        "UN MIL SEISCIENTOS CINCUENTA", "DOSCIENTOS OCHENTA",
-    )
-    NOMBRES = ("MAHOL", "DIEGO BRISENO", "RICARDO", "ANA LOPEZ", "71 RICARDO", "LUIS M")
+    Antes era una lista de plantillas escritas a mano, que se desviaba de lo
+    que imprime el generador. Ahora se compone un ticket pequeno con
+    `plantillas.py` y se toma un renglon al azar: componer es texto puro y
+    cuesta microsegundos (lo caro es renderizar), asi que sale gratis
+    garantizar que la CRNN entrene con **exactamente** los renglones que el
+    sistema va a encontrar.
+    """
 
     def __init__(self, azar: random.Random) -> None:
         self._azar = azar
         self._catalogo = CatalogoMexicano(azar)
 
     def una(self) -> str:
-        """Elige un tipo de renglon con la frecuencia aproximada de un ticket real."""
-        tipo = self._azar.choices(
-            ["producto", "metadato", "fecha", "total", "encabezado", "nota"],
-            weights=[46, 14, 8, 10, 10, 12],
-        )[0]
-        return getattr(self, f"_{tipo}")()
+        from divieat_ticket.plantillas import CatalogoDePlantillas
+        from divieat_ticket.sintetico import EstiloDeImporte
 
-    def _producto(self) -> str:
-        descripcion, unitario = self._azar.choice(self._catalogo.carta)
-        cantidad = self._azar.choices([1, 2, 3, 4], weights=[7, 2, 1, 1])[0]
-        importe = unitario * cantidad / 100
-        relleno = self._azar.randint(3, 22)
-        signo = "$" if self._azar.random() < 0.7 else ""
-        return f"{cantidad}{' ' * self._azar.randint(1, 5)}{descripcion}{' ' * relleno}{signo}{importe:,.2f}"
+        ticket, contexto = self._ticket_corto()
+        plantilla = CatalogoDePlantillas(self._azar).elegir()
+        renglones = [
+            texto
+            for texto, _, _ in plantilla.componer(
+                ticket, contexto, EstiloDeImporte.elegir(self._azar),
+                self._azar.randint(38, 48),
+            )
+            if texto.strip() and set(texto.strip()) - set("-=_~.")
+        ]
+        return self._azar.choice(renglones) if renglones else "TOTAL: $0.00"
 
-    def _metadato(self) -> str:
-        clave = self._azar.choice(["MESA", "MESERO", "PERSONAS", "ORDEN", "FOLIO", "CAJERO", "TEL"])
-        separador = ":" if self._azar.random() < 0.7 else ": "
-        if clave == "MESA":
-            valor = self._azar.choice(["2Y7", "SALA4", "42", "A12", "7"])
-        elif clave == "MESERO":
-            valor = self._azar.choice(self.NOMBRES)
-        elif clave == "PERSONAS":
-            valor = str(self._azar.randint(1, 12))
-        elif clave == "TEL":
-            valor = str(self._azar.randrange(9_000_000_000, 9_999_999_999))
-        elif clave == "CAJERO":
-            valor = ""
-        else:
-            valor = str(self._azar.randrange(20, 999_999))
-        return f"{clave}{separador}{valor}"
+    def _ticket_corto(self):
+        """Un ticket minimo: solo se necesita para extraer renglones."""
+        from datetime import datetime, timedelta
 
-    def _fecha(self) -> str:
-        dia, mes = self._azar.randint(1, 28), self._azar.randint(1, 12)
-        hora, minuto, segundo = self._azar.randint(1, 12), self._azar.randint(0, 59), self._azar.randint(0, 59)
-        meridiano = self._azar.choice(["AM", "PM"])
-        return f"{dia:02d}/{mes:02d}/2026 {hora:02d}:{minuto:02d}:{segundo:02d} {meridiano}"
+        from divieat_ticket.dominio import Dinero, Producto, TicketExtraido
+        from divieat_ticket.plantillas import ContextoDeTicket
 
-    def _total(self) -> str:
-        monto = self._azar.randrange(15_000, 400_000) / 100
-        estilo = self._azar.random()
-        if estilo < 0.4:
-            return f"TOTAL:{' ' * self._azar.randint(4, 14)}${monto:,.2f}"
-        if estilo < 0.7:
-            base = monto / 1.16
-            return f"SUBTOTAL:${base:,.2f}{' ' * self._azar.randint(2, 6)}IVA:${monto - base:,.2f}"
-        return f"IVA:{' ' * self._azar.randint(6, 16)}${monto * 0.16:,.2f}"
-
-    def _encabezado(self) -> str:
-        if self._azar.random() < 0.5:
-            nombre, calle = self._catalogo.restaurante()
-            return self._azar.choice([nombre, calle])
-        return self._azar.choice(
-            ["CANT. DESCRIPCION                  IMPORTE",
-             "RFC:OMM200309S39", "IDA YUCATAN MEXICO CP 97000",
-             "OPERADORA MONTES MOLINA", "RESTAURANTES MIYABI S. DE R.L.  DE C.V."]
+        productos = [
+            Producto(
+                descripcion=descripcion,
+                cantidad=self._azar.choices([1, 2, 3, 4], weights=[6, 3, 2, 1])[0],
+                importe=Dinero(unitario * 2),
+                precio_unitario=Dinero(unitario),
+            )
+            for descripcion, unitario in self._catalogo.muestra(self._azar.randint(2, 5))
+        ]
+        total = Dinero.suma(p.importe for p in productos)
+        base = Dinero(int(round(total.centavos / 1.16)))
+        nombre, direccion = self._catalogo.restaurante()
+        apertura = datetime(2026, 1, 1, 9, 0) + timedelta(
+            days=self._azar.randrange(330), minutes=self._azar.randrange(700)
         )
-
-    def _nota(self) -> str:
-        plantilla = self._azar.choice(self.PLANTILLAS_NOTA)
-        return plantilla.format(
-            palabras=self._azar.choice(self.PALABRAS_MONTO),
-            codigo=f"{self._azar.randrange(10000, 99999)}LARAXGLF",
-            dias=self._azar.choice(["7", "30", "ULTIMO DIA DEL MES"]),
-            version=self._azar.choice(["11", "12"]),
-            slug=self._azar.choice(["avelino", "marcelo", "miyabi"]),
+        ticket = TicketExtraido(
+            productos=productos, restaurante=nombre, folio=str(self._azar.randrange(100, 999999)),
+            subtotal=base, iva=total - base, total_impreso=total, fecha=apertura,
         )
+        contexto = ContextoDeTicket(
+            nombre=nombre, direccion=direccion,
+            razon_social=self._azar.choice(CatalogoMexicano.RAZONES),
+            rfc=f"{self._azar.choice('ABCDEFG')}{self._azar.randrange(100000, 999999)}XY1",
+            telefono=str(self._azar.randrange(9_000_000_000, 9_999_999_999)),
+            mesa=self._azar.choice(["2Y7", "SALA4", "33", "56", "7"]),
+            mesero=self._azar.choice(CatalogoMexicano.MESEROS),
+            comensales=self._azar.randint(1, 8), orden=self._azar.randrange(1, 300),
+            apertura=apertura, cierre=apertura + timedelta(minutes=40),
+            version_pos=self._azar.choice(["10", "11", "12"]),
+            codigo_factura=f"{self._azar.randrange(10000, 99999)}LARAXGLF",
+            sitio_factura=f"https://mefacturo.mx/{nombre.split()[-1].lower()}",
+        )
+        return ticket, contexto
 
 
 class RenderizadorDeLinea:

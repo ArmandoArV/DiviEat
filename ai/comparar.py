@@ -23,11 +23,11 @@ clasica = CadenaDePreproceso.por_defecto()
 motores = []
 if Path("modelos/crnn_pipeline.pt").is_file():
     motores.append(("CRNN+morfologia", MotorCRNN("modelos/crnn_pipeline.pt"), clasica))
-if Path("modelos/crnn_final.pt").is_file() and Path("modelos/unet_final.pt").is_file():
+if Path("modelos/crnn_v2_final.pt").is_file() and Path("modelos/unet_v2.pt").is_file():
     motores.append((
         "CRNN+U-Net",
-        MotorCRNN("modelos/crnn_final.pt",
-                  segmentador=SegmentadorNeuronal("modelos/unet_final.pt")),
+        MotorCRNN("modelos/crnn_v2_final.pt",
+                  segmentador=SegmentadorNeuronal("modelos/unet_v2.pt")),
         clasica,
     ))
 motores += [("EasyOCR", MotorEasyOCR(), clasica), ("Tesseract", MotorTesseract(), clasica)]
