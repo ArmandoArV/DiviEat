@@ -1,0 +1,21 @@
+[project]
+name = "divieat-ticket"
+version = "0.1.0"
+description = "Extraccion de informacion de tickets de restaurante para DiviEat"
+requires-python = ">=3.13"
+dependencies = ["numpy>=2.0", "opencv-python>=4.10", "pillow>=10.0", "torch>=2.5", "scikit-learn>=1.5"]
+
+[project.optional-dependencies]
+tesseract = ["pytesseract>=0.3.10"]
+easyocr = ["easyocr>=1.7"]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
