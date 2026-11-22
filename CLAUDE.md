@@ -237,18 +237,56 @@ homografia que la imagen.
 
 ### Estilo de importes
 
-Los cinco tickets reales imprimen `$` en todos los importes y el generador no
+Los nueve tickets reales imprimen `$` en todos los importes y el generador no
 lo hacia: la CRNN se entreno un tiempo con una distribucion inexistente.
 `EstiloDeImporte` lo corrige con tres variantes (pegado `$160.00`, columna
 `$     75.00`, sin simbolo) constantes dentro de un mismo ticket, como hace un
 POS real.
+
+### El salto de dominio sintetico -> real: tres causas medidas
+
+La CRNN propia leia renglones sinteticos limpios con CER 0.009 y recortes de
+fotos reales con CER 0.9986: habia aprendido una distribucion que no existe
+fuera del generador. Tres causas, cada una medida por separado:
+
+| Arreglo | CER real |
+|---|---|
+| Modelo v2 (sintetico liso) | 1.12 |
+| `textura_termica`: rejilla de puntos ~203ppp, puntos que no queman, sangrado del calor, bandeo, grano | 0.662 |
+| Margenes laterales amplios y asimetricos en los renglones de entrenamiento | 0.523 |
+| `_ancho_comun` por percentiles 10-90 en vez de minimo y maximo | **0.383** |
+
+Dos de los tres se delataron **mirando la salida, no las metricas**:
+
+- **El `$` fantasma.** *Todas* las predicciones empezaban con espacios y un
+  `$`. Los renglones sinteticos empezaban pegados al texto, pero el segmentador
+  entrega el renglon con el margen del papel a los lados: la red habia
+  aprendido a leer un `$` donde solo habia papel en blanco.
+- **La columna oscura.** `_ancho_comun` tomaba el minimo y el maximo absolutos
+  de las cajas, asi que una sola deteccion espuria en el canto del papel metia
+  una banda oscura en *todos* los recortes, que el reconocedor leia como un
+  caracter al inicio de cada renglon. Cambiar a percentiles bajo el CER de
+  0.523 a 0.383 **con los mismos pesos, sin reentrenar**: un tercio del error
+  nunca fue del modelo.
+
+**Donde esta el techo.** El ajuste fino arranca en 0.776, toca su minimo
+**0.579 en la epoca 2** y de ahi sube mientras el entrenamiento cae a 0.027
+(brecha +5.1). Con 83 recortes reales de entrenamiento, `AumentadorDeRecortes`
+retrasa la memorizacion pero no la evita; `FuenteMixta` los sobremuestrea 14x y
+sin aumentacion la memorizacion esta garantizada. La via para romper ese techo
+es **destilar EasyOCR** sobre fotos sin transcribir, no transcribir mas a mano.
+
+**Por eso EasyOCR es el motor de produccion.** La CRNN propia paso de
+inservible a legible (`***SOFT RESTAURANT V12 PRO***` -> `V12 PMO`, un caracter
+de error), pero 0.38 esta lejos del <0.05 que pediria produccion. Su valor es
+como ejercicio de fundamentos, y el diagnostico de arriba es el entregable.
 
 ### Datos y evaluacion
 
 No existe corpus publico de tickets mexicanos, asi que `sintetico.py` los
 fabrica con verdad exacta y `modelo/datos.py` genera renglones sueltos para
 entrenar la CRNN. Los tickets reales estan transcritos en
-`ai/tests/fixtures_reales.py` (Miyabi, Marcelo, Avelino) y son el test de
+`ai/tests/fixtures_reales.py` (nueve tickets, cuatro plantillas de POS) y son el test de
 aceptacion del parser. **Las fotos originales estan en `.gitignore`**: son
 tickets reales con folio y nombre de mesero.
 
