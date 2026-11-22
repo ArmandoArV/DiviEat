@@ -269,6 +269,7 @@ class AnalizadorDeTicket:
         self.normalizador = normalizador or NormalizadorOCR()
         self.extractor = extractor or ExtractorDeProductos()
         self.detector = detector or DetectorDePerfil()
+        self.corrector = CorrectorDeImportes()
         self.metadatos = LectorDeMetadatos()
         self.ultimo_perfil: PerfilDeTicket | None = None
         self.ultimo_puntaje: float = 0.0
@@ -329,6 +330,10 @@ class AnalizadorDeTicket:
             elif tipo is TipoLinea.ENCABEZADO and ticket.restaurante is None:
                 ticket.restaurante = texto.strip()
 
+        # El papel se verifica a si mismo: subtotal + IVA fija el total, y el
+        # total fija los importes. Se aplica al final, con el ticket completo.
+        self.corrector.corregir_total(ticket)
+        self.corrector.corregir(ticket)
         return ticket
 
     # ------------------------------------------------------------- auxiliares
@@ -358,3 +363,123 @@ class AnalizadorDeTicket:
         unitario = self.extractor.unitario(siguiente.texto_normalizado)
         if unitario is not None and unitario.centavos > 0:
             producto.precio_unitario = unitario
+
+
+class CorrectorDeImportes:
+    """Usa el TOTAL impreso como suma de verificacion para reparar importes.
+
+    El OCR confunde el simbolo de moneda con un digito: `$160.00` se lee
+    `8160,00` y `$1,175.00` se lee `51,175`. El error es sistematico y, visto
+    en aislamiento, indistinguible de un importe legitimo.
+
+    Pero el ticket trae su propia verificacion: la suma de los renglones tiene
+    que dar el TOTAL. Si no cuadra, se buscan las correcciones que la cuadran.
+    Solo se aplican si existe **una** combinacion que encaja exactamente; con
+    varias candidatas, adivinar seria peor que dejar el dato dudoso.
+    """
+
+    CONFUNDIBLES_CON_MONEDA = "58S$"
+
+    def __init__(self, tolerancia: Dinero | None = None, maximo_productos: int = 24) -> None:
+        self.tolerancia = tolerancia or Dinero(100)
+        self.maximo_productos = maximo_productos
+
+    def candidatos(self, importe: Dinero) -> list[Dinero]:
+        """Lecturas alternativas de un importe, la original primero."""
+        opciones = [importe]
+        entero, centavos = divmod(abs(importe.centavos), 100)
+        texto = str(entero)
+        if len(texto) > 1 and texto[0] in "58":
+            recortado = texto[1:].lstrip("0") or "0"
+            alternativa = Dinero(int(recortado) * 100 + centavos)
+            if alternativa.centavos > 0 and alternativa != importe:
+                opciones.append(alternativa)
+        return opciones
+
+    def corregir_total(self, ticket: TicketExtraido) -> bool:
+        """Repara el TOTAL usando la otra verificacion del papel: subtotal + IVA.
+
+        El simbolo de moneda del TOTAL tambien se confunde (`$1,175.00` ->
+        `51,175`). Cuando el ticket trae subtotal e IVA, su suma es la base mas
+        fiable para elegir entre las lecturas posibles del total.
+        """
+        if ticket.subtotal is None or ticket.iva is None:
+            return False
+        esperado = ticket.subtotal + ticket.iva
+        if ticket.total_impreso is not None:
+            if abs(ticket.total_impreso - esperado).centavos <= self.tolerancia.centavos:
+                return False
+            for candidato in self.candidatos(ticket.total_impreso):
+                if abs(candidato - esperado).centavos <= self.tolerancia.centavos:
+                    ticket.total_impreso = candidato
+                    return True
+            # Ninguna lectura del total coincide con subtotal + IVA: entonces
+            # el mal leido pudo ser cualquiera de los tres. Sustituir uno por
+            # otro seria cambiar un dato dudoso por otro igual de dudoso.
+            return False
+        ticket.total_impreso = esperado
+        return True
+
+    def corregir(self, ticket: TicketExtraido) -> int:
+        """Ajusta los importes para que cuadren. Devuelve cuantos cambio."""
+        objetivo = ticket.total_de_referencia
+        if objetivo is None or not ticket.productos:
+            return 0
+        if ticket.cuadra(self.tolerancia):
+            return 0
+        if len(ticket.productos) > self.maximo_productos:
+            return 0
+
+        eleccion = self._buscar_combinacion(ticket.productos, objetivo)
+        if eleccion is None:
+            return 0
+
+        cambiados = 0
+        for producto, importe in zip(ticket.productos, eleccion):
+            if importe != producto.importe:
+                producto.importe = importe
+                producto.precio_unitario = (
+                    Dinero(importe.centavos // producto.cantidad)
+                    if importe.centavos % producto.cantidad == 0
+                    else None
+                )
+                # Se corrigio por cuadre, no porque se leyera bien: queda marcado
+                # para que la pantalla de revision lo resalte.
+                producto.confianza = min(producto.confianza, 0.6)
+                cambiados += 1
+        return cambiados
+
+    def _buscar_combinacion(
+        self, productos: list[Producto], objetivo: Dinero
+    ) -> list[Dinero] | None:
+        """Programacion dinamica sobre las sumas alcanzables.
+
+        Se exige solucion unica: si dos combinaciones distintas dan el total,
+        no hay forma de saber cual leyo mal el OCR.
+        """
+        limite = objetivo.centavos + self.tolerancia.centavos
+        alcanzables: dict[int, list[Dinero] | None] = {0: []}   # None = ambigua
+        for producto in productos:
+            siguiente: dict[int, list[Dinero] | None] = {}
+            for suma, camino in alcanzables.items():
+                for candidato in self.candidatos(producto.importe):
+                    total = suma + candidato.centavos
+                    if total > limite:
+                        continue
+                    if total in siguiente:
+                        siguiente[total] = None          # dos caminos: ambiguo
+                    elif camino is None:
+                        siguiente[total] = None
+                    else:
+                        siguiente[total] = camino + [candidato]
+            alcanzables = siguiente
+            if not alcanzables:
+                return None
+
+        mejor = None
+        for suma, camino in alcanzables.items():
+            if abs(suma - objetivo.centavos) <= self.tolerancia.centavos:
+                if camino is None or mejor is not None:
+                    return None                           # ambiguo
+                mejor = camino
+        return mejor
