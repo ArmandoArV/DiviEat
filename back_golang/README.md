@@ -37,6 +37,26 @@ go test ./...
 The key comes from [portal.mipey.mx/developers](https://portal.mipey.mx/developers).
 **`.env` is gitignored**: that key moves real money.
 
+## Docker
+
+```bash
+docker build -t divieat-codi .
+docker run --rm -p 8080:8080 --env-file .env divieat-codi
+```
+
+Multi-stage onto `scratch`: 17.6 MB, no shell, no package manager, running as
+uid 65534. The CA bundle is copied in because both outbound calls verify TLS —
+Pey over HTTPS and Mongo Atlas over `mongodb+srv` — and without it every one
+fails at handshake.
+
+`.env` is in `.dockerignore`. A secret baked into a layer survives in the
+image history even if a later layer deletes the file, so it must never get in
+to begin with; pass it at run time with `--env-file`.
+
+There is no `HEALTHCHECK` instruction: `scratch` has no shell to run one.
+Probe `GET /health` over HTTP from the orchestrator, which is where a liveness
+check belongs anyway.
+
 ## Endpoints
 
 | | |

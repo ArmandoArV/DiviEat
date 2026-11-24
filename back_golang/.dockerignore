@@ -1,0 +1,15 @@
+# Never let the key into an image layer. It would survive in the history
+# even if a later layer deleted the file.
+.env
+.env.*
+!.env.example
+
+.git
+.gitignore
+README.md
+Dockerfile
+.dockerignore
+
+# Local build output
+/back_golang
+/bin/
