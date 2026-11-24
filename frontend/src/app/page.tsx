@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/Button/Button";
-import { MESA_7 } from "@/dominio/mesa";
+import { ORDEN_DEMO } from "@/dominio/orden";
 import estilos from "./page.module.css";
 
 export default function Inicio() {
@@ -14,15 +14,22 @@ export default function Inicio() {
       </p>
 
       <div className={estilos.boton}>
-        <Link href={`/mesa/${MESA_7.codigo}`}>
-          <Button>Entrar a la Mesa {MESA_7.numero}</Button>
+        <Link href="/escanear">
+          <Button>Escanear el QR de mi mesa</Button>
+        </Link>
+      </div>
+      <div className={estilos.boton}>
+        <Link href={`/orden/${ORDEN_DEMO.numero}`}>
+          <Button color="blanco">Entrar sin escanear (demo)</Button>
         </Link>
       </div>
 
       <p className={estilos.nota}>
-        Atajo de demo: las pantallas de cámara y de lectura del ticket son el
-        camino B y todavía no están construidas, así que esto entra directo a la
-        mesa como si ya hubieras escaneado el QR.
+        Para probar el escáner, abre{" "}
+        <Link href={`/orden/${ORDEN_DEMO.numero}/qr`} className={estilos.liga}>
+          el QR de la orden {ORDEN_DEMO.numero}
+        </Link>{" "}
+        en otra pantalla y apúntale con el teléfono.
       </p>
     </main>
   );

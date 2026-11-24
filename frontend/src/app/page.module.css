@@ -39,3 +39,9 @@
 .boton {
   margin-top: var(--space-5);
 }
+
+.liga {
+  color: var(--color-primary-base);
+  font-weight: var(--peso-bold);
+  text-decoration: underline;
+}

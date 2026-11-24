@@ -8,7 +8,7 @@ export type Comensal = {
   estado: EstadoComensal;
   /** Lo que le toca de consumo, sin propina. */
   consumo: Centavos;
-  /** Color de identidad, el que lo distingue al entrar a la mesa. */
+  /** Color de identidad, el que lo distingue al entrar. */
   color: string;
 };
 
@@ -24,9 +24,16 @@ export type Producto = {
   compartido?: boolean;
 };
 
-export type Mesa = {
-  codigo: string;
-  numero: number;
+/**
+ * La unidad es la ORDEN, no la mesa: una mesa se reusa varias veces en la
+ * noche y la orden es lo que abre, acumula y se cierra — es tambien como la
+ * numeran los POS mexicanos («ORDEN NO. 29» en SOFT RESTAURANT) y como la
+ * cierra el golden path del hackathon («se marca como orden completada»).
+ * La mesa pasa a ser un atributo de la orden: donde se esta sirviendo.
+ */
+export type Orden = {
+  numero: string;
+  mesa: number;
   restaurante: string;
   direccion: string;
   abiertaDesde: string;
@@ -36,13 +43,13 @@ export type Mesa = {
 };
 
 /**
- * Datos canonicos del demo. Las cifras estan cuadradas contra las 16 pantallas
- * del Figma: la suma de los renglones da exactamente el total de la mesa, y la
- * suma de los consumos por comensal tambien. No los cambies sueltos.
+ * Datos canonicos del demo. Las cifras estan cuadradas contra las pantallas
+ * del Figma: la suma de los renglones da exactamente el total, y la suma de
+ * los consumos por comensal tambien. No los cambies sueltos.
  */
-export const MESA_7: Mesa = {
-  codigo: "7A2K",
-  numero: 7,
+export const ORDEN_DEMO: Orden = {
+  numero: "2471",
+  mesa: 7,
   restaurante: "La Nortestense",
   direccion: "Av. Revolución 120",
   abiertaDesde: "20:15",
@@ -68,18 +75,18 @@ export const MESA_7: Mesa = {
 /** Quien eres en el demo: el flujo se cuenta desde Mariana. */
 export const YO = "mariana";
 
-export function cobrado(mesa: Mesa): Centavos {
-  return mesa.comensales
+export function cobrado(orden: Orden): Centavos {
+  return orden.comensales
     .filter((c) => c.estado === "pagado")
     .reduce((suma, c) => suma + c.consumo, 0);
 }
 
-export function porCobrar(mesa: Mesa): Centavos {
-  return mesa.total - cobrado(mesa);
+export function porCobrar(orden: Orden): Centavos {
+  return orden.total - cobrado(orden);
 }
 
-export function buscarMesa(codigo: string): Mesa | null {
-  return codigo.toUpperCase() === MESA_7.codigo ? MESA_7 : null;
+export function buscarOrden(numero: string): Orden | null {
+  return numero.trim().toUpperCase() === ORDEN_DEMO.numero ? ORDEN_DEMO : null;
 }
 
 /**

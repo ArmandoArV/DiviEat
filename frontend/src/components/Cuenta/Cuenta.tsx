@@ -9,9 +9,9 @@ import {
   colorPorEstado,
   porCobrar,
   YO,
-  type Mesa,
+  type Orden,
   type Producto,
-} from "@/dominio/mesa";
+} from "@/dominio/orden";
 import estilos from "./Cuenta.module.css";
 
 /**
@@ -19,16 +19,16 @@ import estilos from "./Cuenta.module.css";
  * dueños pagaron, apartado mientras alguien esta en el cobro. Sin dueños, sigue
  * disponible para que alguien lo reclame.
  */
-function estadoDe(producto: Producto, mesa: Mesa): EstadoRenglon {
+function estadoDe(producto: Producto, orden: Orden): EstadoRenglon {
   if (producto.de.length === 0) return "disponible";
-  const suyos = mesa.comensales.filter((c) => producto.de.includes(c.id));
+  const suyos = orden.comensales.filter((c) => producto.de.includes(c.id));
   if (suyos.every((c) => c.estado === "pagado")) return "pagado";
   if (suyos.some((c) => c.estado === "pagando")) return "apartado";
   return "disponible";
 }
 
-function metaDe(producto: Producto, mesa: Mesa, estado: EstadoRenglon): string {
-  const nombres = mesa.comensales
+function metaDe(producto: Producto, orden: Orden, estado: EstadoRenglon): string {
+  const nombres = orden.comensales
     .filter((c) => producto.de.includes(c.id))
     .map((c) => (c.id === YO ? "tú" : c.nombre));
   const piezas = producto.cantidad > 1 ? `${producto.cantidad} piezas` : null;
@@ -37,7 +37,7 @@ function metaDe(producto: Producto, mesa: Mesa, estado: EstadoRenglon): string {
     return [`Pagó ${nombres.join(" y ")}`, piezas].filter(Boolean).join(" · ");
   }
   if (estado === "apartado") {
-    const pagando = mesa.comensales.find(
+    const pagando = orden.comensales.find(
       (c) => producto.de.includes(c.id) && c.estado === "pagando",
     );
     const compartido = producto.compartido
@@ -50,14 +50,14 @@ function metaDe(producto: Producto, mesa: Mesa, estado: EstadoRenglon): string {
     .join(" · ");
 }
 
-export function Cuenta({ mesa }: { mesa: Mesa }) {
-  const yaCobrado = cobrado(mesa);
-  const falta = porCobrar(mesa);
-  const avance = Math.round((yaCobrado / mesa.total) * 100);
+export function Cuenta({ orden }: { orden: Orden }) {
+  const yaCobrado = cobrado(orden);
+  const falta = porCobrar(orden);
+  const avance = Math.round((yaCobrado / orden.total) * 100);
 
-  const conEstado = mesa.productos.map((producto) => ({
+  const conEstado = orden.productos.map((producto) => ({
     producto,
-    estado: estadoDe(producto, mesa),
+    estado: estadoDe(producto, orden),
   }));
   const pagados = conEstado.filter((p) => p.estado === "pagado");
   const pendientes = conEstado.filter((p) => p.estado !== "pagado");
@@ -66,7 +66,7 @@ export function Cuenta({ mesa }: { mesa: Mesa }) {
     <Pantalla
       encabezado={
         <>
-          <TituloPantalla>Mesa {mesa.numero}</TituloPantalla>
+          <TituloPantalla>Mesa {orden.mesa}</TituloPantalla>
           <Badge color="exito">En vivo</Badge>
         </>
       }
@@ -75,7 +75,7 @@ export function Cuenta({ mesa }: { mesa: Mesa }) {
       <section className={estilos.resumen}>
         <p className={estilos.cifra}>
           <span className={estilos.cobrado}>{pesos(yaCobrado)}</span>
-          <span className={estilos.deTotal}>de {pesos(mesa.total)}</span>
+          <span className={estilos.deTotal}>de {pesos(orden.total)}</span>
         </p>
         <div
           className={estilos.barra}
@@ -91,7 +91,7 @@ export function Cuenta({ mesa }: { mesa: Mesa }) {
       </section>
 
       <section className={estilos.comensales}>
-        {mesa.comensales.map((comensal) => {
+        {orden.comensales.map((comensal) => {
           const eresTu = comensal.id === YO;
           const comoVa = eresTu
             ? "tú"
@@ -125,7 +125,7 @@ export function Cuenta({ mesa }: { mesa: Mesa }) {
               <ItemRow
                 key={producto.id}
                 nombre={producto.nombre}
-                meta={metaDe(producto, mesa, estado)}
+                meta={metaDe(producto, orden, estado)}
                 importe={producto.importe}
                 estado={estado}
                 marca={<Palomita />}
@@ -142,7 +142,7 @@ export function Cuenta({ mesa }: { mesa: Mesa }) {
           <ItemRow
             key={producto.id}
             nombre={producto.nombre}
-            meta={metaDe(producto, mesa, estado)}
+            meta={metaDe(producto, orden, estado)}
             importe={producto.importe}
             estado={estado}
             insignia={

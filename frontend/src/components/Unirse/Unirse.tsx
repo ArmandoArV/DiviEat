@@ -6,7 +6,7 @@ import { Avatar } from "@/components/Avatar/Avatar";
 import { Badge } from "@/components/Badge/Badge";
 import { Button } from "@/components/Button/Button";
 import { Pantalla } from "@/components/Pantalla/Pantalla";
-import type { Mesa } from "@/dominio/mesa";
+import type { Orden } from "@/dominio/orden";
 import estilos from "./Unirse.module.css";
 
 /**
@@ -14,15 +14,15 @@ import estilos from "./Unirse.module.css";
  * pantalla entera vive en el cliente. Lo unico que pedimos para entrar es el
  * nombre: sin correo, sin contraseña y sin descargar nada.
  */
-export function Unirse({ mesa }: { mesa: Mesa }) {
+export function Unirse({ orden }: { orden: Orden }) {
   const router = useRouter();
   const [nombre, setNombre] = useState("");
   const id = useId();
   const listo = nombre.trim().length > 0;
-  const dentro = mesa.comensales.filter((c) => c.id !== "mariana");
+  const dentro = orden.comensales.filter((c) => c.id !== "mariana");
 
   function entrar() {
-    if (listo) router.push(`/mesa/${mesa.codigo}/cuenta`);
+    if (listo) router.push(`/orden/${orden.numero}/cuenta`);
   }
 
   return (
@@ -40,16 +40,16 @@ export function Unirse({ mesa }: { mesa: Mesa }) {
     >
       <p className={estilos.marca}>DiviEat</p>
 
-      <h1 className={estilos.titulo}>Estás en la Mesa {mesa.numero}</h1>
+      <h1 className={estilos.titulo}>Estás en la Mesa {orden.mesa}</h1>
       <p className={estilos.lugar}>
-        {mesa.restaurante} · {mesa.direccion}
+        {orden.restaurante} · {orden.direccion}
       </p>
 
       <section className={estilos.tarjeta}>
         <div className={estilos.tarjetaTop}>
           <div>
             <p className={estilos.estado}>Cuenta abierta</p>
-            <p className={estilos.desde}>Se abrió a las {mesa.abiertaDesde}</p>
+            <p className={estilos.desde}>Se abrió a las {orden.abiertaDesde}</p>
           </div>
           <Badge color="exito">En vivo</Badge>
         </div>
