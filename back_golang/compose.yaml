@@ -1,0 +1,36 @@
+# Local stack: the API against a throwaway Mongo.
+#
+#   docker compose up --build
+#
+# Secrets come from .env, which is gitignored. Without PEY_API_KEY the API
+# still boots and /health says so, which is enough to exercise everything
+# except an actual charge.
+services:
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      MONGODB_URI: mongodb://mongo:27017
+      DATABASE_NAME: divieat
+      PEY_API_KEY: ${PEY_API_KEY:-}
+      PEY_WEBHOOK_SECRET: ${PEY_WEBHOOK_SECRET:-}
+      PEY_BANK_ACCOUNT_ID: ${PEY_BANK_ACCOUNT_ID:-}
+      PEY_QR_EXPIRATION_SECONDS: "900"
+      # Pey has no sandbox: without this brake a typo charges real money.
+      PEY_TEST_MODE: "true"
+      PEY_TEST_MAX_AMOUNT_MXN: "1"
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  mongo:
+    image: mongo:8
+    # No volume on purpose: this data is disposable, and a stale local
+    # database is a worse problem than an empty one.
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
