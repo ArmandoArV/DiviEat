@@ -1,0 +1,12 @@
+# Secretos: la llave de Pey cobra dinero real, nunca al repo
+.env
+.env.*
+!.env.example
+
+# Entorno y cache
+.venv/
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/

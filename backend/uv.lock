@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.14"
 
 [[package]]
@@ -49,15 +49,29 @@ source = { editable = "." }
 dependencies = [
     { name = "dotenv" },
     { name = "fastapi", extra = ["standard"] },
+    { name = "httpx" },
+    { name = "pydantic-settings" },
     { name = "pymongo" },
+    { name = "standardwebhooks" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.165.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic-settings", specifier = ">=2.16.3" },
     { name = "pymongo", extras = ["srv"], specifier = ">=4.20.1" },
+    { name = "standardwebhooks", specifier = ">=1.3.0" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=9.2.0" }]
 
 [[package]]
 name = "certifi"
@@ -526,6 +540,15 @@ wheels = [
 ]
 
 [[package]]
+name = "iniconfig"
+version = "2.3.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/01/e1/2069291243c926a2ff1cd706c7f3eeb9b62144bf60f77c9fb9ff2fb26bd3/iniconfig-2.3.1.tar.gz", hash = "sha256:67f4b9c50da0dedf52af349e7749a80a9057a5031199791b906c3bb3ae878960", size = 21209, upload-time = "2026-10-06T22:48:38.076Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/56/43/4ca9e49d27a1fcf6bece6f6aec0ea46bb9112489b93d4b688fb415457bdb/iniconfig-2.3.1-py3-none-any.whl", hash = "sha256:9121e2c1fdb355232495be3194c8dfe87ccc2d5dee45947b78e68f499790d7a7", size = 7552, upload-time = "2026-10-06T22:48:36.959Z" },
+]
+
+[[package]]
 name = "jinja2"
 version = "3.1.6"
 source = { registry = "https://pypi.org/simple" }
@@ -749,6 +772,24 @@ wheels = [
 ]
 
 [[package]]
+name = "packaging"
+version = "26.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/c3/75/ffb1dc0ed12352139fb4ca0e3fde4325a23e3d0f3f40efe89717bc4f557b/packaging-26.4.tar.gz", hash = "sha256:c4b671c41ddb9bf26e543c37723610d28fb6bf7affc4da17cf048d419d2c062a", size = 355877, upload-time = "2026-11-23T21:44:11.152Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ba/7b/5504f91c9c2733f693d7759e50ede5d27119d4da7e5836c46d3b5ff81d56/packaging-26.4-py3-none-any.whl", hash = "sha256:81383611a09c1bc0b08b76e0fd5829d7c6824c65b27a6aee339da133f4233ea2", size = 140049, upload-time = "2026-11-23T21:44:09.531Z" },
+]
+
+[[package]]
+name = "pluggy"
+version = "1.7.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/bf/db/7fc19e6f2dc92a966727031389fc2e08b558f0f25eb7403c1119ad4713cd/pluggy-1.7.0.tar.gz", hash = "sha256:d1eaa46ebb595891b860ab086b4d09c8588af65ebd4361b8e8f4bb8920b90ba8", size = 123304, upload-time = "2026-10-15T09:50:58.343Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/40/9e/2b38731e0fc536806f16490e1a12d7f0dc2a1235aa8cc07bcc75416a7daa/pluggy-1.7.0-py3-none-any.whl", hash = "sha256:7dd7b0d8832ba3cb632c306926ded123429211b83641b35dc5c41ad2d34f9bec", size = 27082, upload-time = "2026-10-15T09:50:56.808Z" },
+]
+
+[[package]]
 name = "protobuf"
 version = "7.36.2"
 source = { registry = "https://pypi.org/simple" }
@@ -941,6 +982,22 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/2a/cc/fca24bb5f78282943a1ee671a103ca2297718a490f5f550a0291a8a78bbe/pymongo-4.20.1-cp315-cp315t-win32.whl", hash = "sha256:647a4cddd29c198d523011c41b5cf88a7de9ef6c9cf2ae6d4f48cb8c230169ec", size = 824216, upload-time = "2026-11-19T17:30:51.839Z" },
     { url = "https://files.pythonhosted.org/packages/00/2b/123eaba19b4964215a55ced720c1677529bd34c500848dd769f47aabd41f/pymongo-4.20.1-cp315-cp315t-win_amd64.whl", hash = "sha256:2b513256c5ee40b9a65853d4afe5d72010bd8baa3d033a13225af7ad09a03a81", size = 831649, upload-time = "2026-11-19T17:30:53.092Z" },
     { url = "https://files.pythonhosted.org/packages/44/4c/6358db855e3cb19cee3336c038f03ddc9a1e98c4b620a29c1fedc49a1685/pymongo-4.20.1-cp315-cp315t-win_arm64.whl", hash = "sha256:0f991a9c53658bd2e9c36ce2e3ac48b31aa94e23bff00f276dc7f031e4deb1d4", size = 825794, upload-time = "2026-11-19T17:30:54.705Z" },
+]
+
+[[package]]
+name = "pytest"
+version = "9.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "iniconfig" },
+    { name = "packaging" },
+    { name = "pluggy" },
+    { name = "pygments" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/79/42/bb4641652e58dedeac2ec51abc1f8cae4fee4ec63899a0999016229a0f2a/pytest-9.2.0.tar.gz", hash = "sha256:97c4f3b1f3c7414aa36465e09b8220f1d03627993bd51b1282e193753c80557b", size = 1797555, upload-time = "2026-10-27T21:30:20.728Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/51/39/1f5d8c8877a0fa327db959c19341d4be61660de1ab6b7391f9eb805bcd67/pytest-9.2.0-py3-none-any.whl", hash = "sha256:07acdcf88ec174f907dc01af70bf52d49b014bbab03faeeade31c96b18c2e588", size = 411776, upload-time = "2026-10-27T21:30:19.131Z" },
 ]
 
 [[package]]
@@ -1139,6 +1196,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/58/15/8b3609fd3830ef7b27b655beb4b4e9c62313a4e8da8c676e142cc210d58e/shellingham-1.5.4.tar.gz", hash = "sha256:8dbca0739d487e5bd35ab3ca4b36e11c4078f3a234bfce294b0a0291363404de", size = 10310, upload-time = "2023-10-24T04:13:40.426Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl", hash = "sha256:7ecfff8f2fd72616f7481040475a65b2bf8af90a56c89140852d1120324e8686", size = 9755, upload-time = "2023-10-24T04:13:38.866Z" },
+]
+
+[[package]]
+name = "standardwebhooks"
+version = "1.3.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/6d/41/c53141ee70970c3e553e90b4aaa65cdcbdd72fabbab91ff3b0a63f902526/standardwebhooks-1.3.0.tar.gz", hash = "sha256:ee071d454f1d349802678d4990fdebd6c2d629be11be294f561343b6db200608", size = 4987, upload-time = "2026-11-17T21:27:13.524Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bf/e4/4e66444745a07b6cfeb0c3b058fe1d042b5928c8b8c0f3047d3610895aed/standardwebhooks-1.3.0-py3-none-any.whl", hash = "sha256:5bec388e29d3e8c6211af66affa1430ac801cb02f3b132484ef4b8f89d32a5ad", size = 5556, upload-time = "2026-11-17T21:27:12.306Z" },
 ]
 
 [[package]]
