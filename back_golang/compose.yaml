@@ -27,10 +27,18 @@ services:
 
   mongo:
     image: mongo:8
+    # --quiet drops the per-connection chatter. Without it the health probe
+    # alone buries the API's own logs, which is exactly what you need to read
+    # when something goes wrong in front of people.
+    command: ["mongod", "--quiet"]
     # No volume on purpose: this data is disposable, and a stale local
     # database is a worse problem than an empty one.
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
-      interval: 5s
+      # Fast while starting, rare afterwards: the probe is there to gate
+      # startup, not to poll a healthy database forever.
+      start_period: 20s
+      start_interval: 2s
+      interval: 60s
       timeout: 5s
-      retries: 10
+      retries: 3
