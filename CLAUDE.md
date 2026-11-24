@@ -21,7 +21,7 @@ es de perfil Node, pero **el stack no está decidido** (ver "Decisiones abiertas
 | Página | id | Contenido |
 |---|---|---|
 | 01 · Landing | `0:1` | Landing desktop 1440×7306 + tablero "Guion de scroll" (especificación de movimiento) |
-| 02 · Flujo comensal | `2:2` | 12 pantallas móviles 390×844, de la cámara al comprobante |
+| 02 · Flujo comensal | `2:2` | 14 pantallas móviles 390×844, de la cámara al comprobante |
 | 03 · Panel restaurante | `2:3` | 3 pantallas desktop 1440×1024: mesas, detalle en vivo, QR por mesa |
 | 04 · Sistema de diseño | `2:4` | Tokens, escala tipográfica y componentes |
 | 05 · Marca | `45:266` | Exploración del logo, calibración y componentes de marca |
@@ -34,6 +34,13 @@ del hackathon CoDi" para saber qué pantallas se reaprovechan y cuáles faltan.
 4. Leyendo el ticket (OCR) · 5. Revisar lo detectado · 6. Te unes a la mesa ·
 7. Cuenta de la mesa · 8. Selección de consumo · 9. Dividir un compartido ·
 10. Resumen y propina · 11. Pago con CoDi · 12. Pago confirmado
+
+**La edición de «Revisar lo detectado»** está resuelta en dos pantallas aparte: `05a ·
+Corregir un producto` (hoja inferior sobre la lista atenuada) y `05b · Producto
+corregido`. La hoja edita **nombre, cantidad y precio unitario**; el importe del renglón
+**no se edita, se calcula** (`3 × $65 = $195`), y el cuadre contra el total impreso se
+recalcula en vivo dentro de la misma hoja. Eliminar un producto es la acción secundaria.
+Ese es el contrato del paso obligatorio del camino B.
 
 ## El golden path del hackathon CoDi
 
@@ -81,8 +88,11 @@ divisibles si son compartidos. **«Sin asignar en $0» es la condicion para cerr
 ## Decisiones de producto ya tomadas
 
 - **Sin app y sin registro.** Solo se pide el nombre para que los demás te identifiquen.
-- **CoDi es el diferenciador**: sin comisión por transacción. Tarjeta y billetera existen
-  como alternativas, con la tarifa del procesador.
+- **CoDi es el único método de pago.** Sin comisión por transacción, y es lo que evalúa
+  el hackathon. Tarjeta y billetera digital **se quitaron de la pantalla 11**: con un solo
+  método el selector dejaba de ser una elección, así que la tarjeta de CoDi ya no lleva
+  radio y el hueco lo ocupa el desglose (consumo + propina = total). Si algún día vuelven,
+  vuelve también el selector.
 - **Dos formas de entrar, pero ya no son pares.** El **QR de la mesa es el camino
   principal** (es el golden path del hackathon y el unico con pedido desde la app). La
   **foto del ticket con OCR es el camino B**, para restaurantes sin menu cargado: abre el
