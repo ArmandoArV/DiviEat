@@ -1,0 +1,8 @@
+# Secrets: the Pey key moves real money
+.env
+.env.*
+!.env.example
+
+# Build output
+/back_golang
+/bin/
