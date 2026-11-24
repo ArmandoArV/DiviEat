@@ -1,0 +1,39 @@
+/* Las pantallas del Figma son 390x844. En desktop la app no se estira: se
+   centra como un telefono, que es donde realmente se usa. */
+.marco {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 430px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  background: var(--color-surface-muted);
+}
+
+.cuerpo {
+  flex: 1;
+  padding: var(--space-5) var(--space-5) var(--space-6);
+}
+
+.barraInferior {
+  position: sticky;
+  bottom: 0;
+  padding: var(--space-4) var(--space-5)
+    calc(var(--space-5) + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--color-border-default);
+  background: var(--color-surface-muted);
+}
+
+.encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5) 0;
+}
+
+.titulo {
+  font-size: 22px;
+  font-weight: var(--peso-extrabold);
+  line-height: 28px;
+}

@@ -1,0 +1,67 @@
+/* Boton 3D: el marco exterior lleva el color "shadow" y 4px de padding abajo;
+   dentro, la cara con el color base. Al presionar, la cara baja 4px y el labio
+   desaparece — por eso el padding se mueve de abajo a arriba, no se encoge. */
+.boton {
+  display: inline-block;
+  width: 100%;
+  padding: 0 0 var(--labio-3d);
+  border: none;
+  border-radius: var(--radius-lg);
+  background: var(--sombra);
+  transition: padding 90ms ease-out;
+}
+
+.boton:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.boton:not(:disabled):active {
+  padding-top: var(--labio-3d);
+  padding-bottom: 0;
+}
+
+.cara {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  border-radius: var(--radius-lg);
+  background: var(--cara-fondo);
+  color: var(--cara-texto);
+  font-weight: var(--peso-extrabold);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* --- color --- */
+.naranja {
+  --sombra: var(--color-primary-shadow);
+  --cara-fondo: var(--color-primary-base);
+  --cara-texto: var(--color-text-on-dark);
+}
+
+.teal {
+  --sombra: var(--color-teal-shadow);
+  --cara-fondo: var(--color-teal-base);
+  --cara-texto: var(--color-text-on-dark);
+}
+
+.blanco {
+  --sombra: var(--color-border-strong);
+  --cara-fondo: var(--color-surface-base);
+  --cara-texto: var(--color-text-primary);
+}
+
+/* --- size --- */
+.l .cara {
+  padding: var(--space-4) var(--space-5);
+  font-size: 17px;
+  line-height: 22px;
+}
+
+.m .cara {
+  padding: var(--space-3) var(--space-4);
+  font-size: 15px;
+  line-height: 20px;
+}

@@ -1,0 +1,94 @@
+.resumen {
+  padding: var(--space-5);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-base);
+}
+
+.cifra {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.cobrado {
+  color: var(--color-primary-base);
+  font-size: 38px;
+  font-weight: var(--peso-black);
+  letter-spacing: -0.02em;
+  line-height: 44px;
+}
+
+.deTotal {
+  color: var(--color-text-muted);
+  font-size: 19px;
+  font-weight: var(--peso-bold);
+}
+
+.barra {
+  height: 10px;
+  margin-top: var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--color-primary-soft);
+}
+
+.avance {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-base);
+}
+
+.faltan {
+  margin-top: var(--space-3);
+  color: var(--color-text-secondary);
+  font-size: 15px;
+  line-height: 21px;
+}
+
+.comensales {
+  display: flex;
+  justify-content: space-around;
+  margin-top: var(--space-4);
+  padding: var(--space-4) var(--space-3);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-base);
+}
+
+.comensal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.comoVa {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: var(--peso-bold);
+  line-height: 18px;
+}
+
+.tu {
+  color: var(--color-primary-shadow);
+}
+
+.seccion {
+  margin-top: var(--space-6);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: var(--peso-extrabold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.seccionPagado {
+  color: var(--color-success-base);
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
