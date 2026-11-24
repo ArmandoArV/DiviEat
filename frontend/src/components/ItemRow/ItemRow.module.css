@@ -1,0 +1,94 @@
+.renglon {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radius-lg);
+  background: var(--fondo);
+  text-align: left;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.nombre {
+  display: block;
+  color: var(--texto-nombre);
+  font-size: 17px;
+  font-weight: var(--peso-extrabold);
+  line-height: 24px;
+}
+
+.meta {
+  display: block;
+  color: var(--texto-meta);
+  font-size: 13px;
+  font-weight: var(--peso-medium);
+  line-height: 19px;
+}
+
+.derecha {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-1);
+}
+
+.precio {
+  color: var(--texto-precio);
+  font-size: 19px;
+  font-weight: var(--peso-black);
+  line-height: 25px;
+}
+
+/* --- estados --- */
+.disponible {
+  --borde: var(--color-border-default);
+  --fondo: var(--color-surface-base);
+  --texto-nombre: var(--color-text-primary);
+  --texto-meta: var(--color-text-muted);
+  --texto-precio: var(--color-text-primary);
+}
+
+.seleccionado {
+  --borde: var(--color-primary-base);
+  --fondo: var(--color-primary-tint);
+  --texto-nombre: var(--color-text-primary);
+  --texto-meta: var(--color-primary-shadow);
+  --texto-precio: var(--color-text-primary);
+  border-width: 2px;
+}
+
+/* Pagado se apaga: ya no es accionable, solo historia de la mesa. */
+.pagado {
+  --borde: var(--color-border-default);
+  --fondo: var(--color-surface-muted);
+  --texto-nombre: var(--color-text-muted);
+  --texto-meta: var(--color-text-muted);
+  --texto-precio: var(--color-text-muted);
+}
+
+.apartado {
+  --borde: var(--color-teal-base);
+  --fondo: var(--color-surface-base);
+  --texto-nombre: var(--color-text-primary);
+  --texto-meta: var(--color-teal-shadow);
+  --texto-precio: var(--color-text-primary);
+}
+
+.marca {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  background: var(--color-success-soft);
+  color: var(--color-success-base);
+}

@@ -1,0 +1,41 @@
+.entrada {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  max-width: 430px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5);
+}
+
+.marca {
+  color: var(--color-primary-base);
+  font-size: 26px;
+  font-weight: var(--peso-black);
+}
+
+.titulo {
+  margin-top: var(--space-4);
+  font-size: 30px;
+  font-weight: var(--peso-black);
+  line-height: 36px;
+}
+
+.texto {
+  margin-top: var(--space-3);
+  color: var(--color-text-secondary);
+  font-size: 16px;
+  line-height: 23px;
+}
+
+.nota {
+  margin-top: var(--space-6);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.boton {
+  margin-top: var(--space-5);
+}
