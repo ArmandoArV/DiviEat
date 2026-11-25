@@ -13,7 +13,7 @@ Set up the virtual environment:
 ```powershell
 cd backend
 uv sync --locked
-```
+``` 
 
 Activate it in PowerShell:
 
@@ -28,6 +28,7 @@ Activate it in Command Prompt (CMD):
 ```bat
 cd backend
 .\.venv\Scripts\activate.bat
+uv sync --locked
 uv run uvicorn app:app --reload
 ```
 
