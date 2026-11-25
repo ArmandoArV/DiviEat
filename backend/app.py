@@ -3,7 +3,7 @@ from database import db, test_database_connection
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse  # 1. Import HTMLResponse
-from routes.qrCode import router as qr_router
+from routes.payment import v1_router
 
 
 app = FastAPI()
@@ -11,7 +11,7 @@ app = FastAPI()
 database = db
 
 test_database_connection(database)
-app.include_router(qr_router)
+app.include_router(v1_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -37,5 +37,3 @@ def read_root():
 def get_user_1():
     return {"id": 1, "name": "User 1", "email": "user1@example.com", "age": 30}
 
-@app.get("/v1/qrcode")
-def 
