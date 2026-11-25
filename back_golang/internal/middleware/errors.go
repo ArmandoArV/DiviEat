@@ -23,11 +23,23 @@ func ErrorHandler(c fiber.Ctx, err error) error {
 	case errors.Is(err, types.ErrPeyNotConfigured):
 		status, message = http.StatusServiceUnavailable, err.Error()
 
-	case errors.Is(err, types.ErrInvalidSignature):
+	case errors.Is(err, types.ErrInvalidSignature),
+		errors.Is(err, types.ErrInvalidCredentials),
+		errors.Is(err, types.ErrInvalidToken):
 		status, message = http.StatusUnauthorized, err.Error()
 
-	case errors.Is(err, types.ErrChargeNotFound):
+	case errors.Is(err, types.ErrChargeNotFound),
+		errors.Is(err, types.ErrUserNotFound):
 		status, message = http.StatusNotFound, err.Error()
+
+	case errors.Is(err, types.ErrEmailTaken):
+		status, message = http.StatusConflict, err.Error()
+
+	case errors.Is(err, types.ErrNameRequired),
+		errors.Is(err, types.ErrInvalidEmail),
+		errors.Is(err, types.ErrWeakPassword),
+		errors.Is(err, types.ErrInvalidRole):
+		status, message = http.StatusBadRequest, err.Error()
 
 	case errors.As(err, &testErr):
 		status, message = http.StatusUnprocessableEntity, testErr.Error()

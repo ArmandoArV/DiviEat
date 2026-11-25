@@ -1,4 +1,4 @@
-// Command back_golang serves DiviEat's CoDi charges through Pey.
+// Command back_golang serves DiviEat's CoDi charges and user authentication.
 package main
 
 import (
@@ -40,18 +40,28 @@ func main() {
 	}
 	defer func() { _ = client.Disconnect(context.Background()) }()
 
-	charges := repositories.NewChargeRepository(client.Database(cfg.DatabaseName))
+	db := client.Database(cfg.DatabaseName)
+	charges := repositories.NewChargeRepository(db)
+	users := repositories.NewUserRepository(db)
 
 	// Booting must not depend on Mongo being up: the API comes alive and
 	// /health says what is missing. Dying at startup only hides the cause.
 	if err := client.Ping(ctx, nil); err != nil {
-		slog.Warn("mongo is not answering; charges will fail until it does", "err", err)
-	} else if err := charges.EnsureIndexes(ctx); err != nil {
-		slog.Warn("could not create the charge indexes", "err", err)
+		slog.Warn("mongo is not answering; persistence will fail until it does", "err", err)
+	} else {
+		if err := charges.EnsureIndexes(ctx); err != nil {
+			slog.Warn("could not create the charge indexes", "err", err)
+		}
+		if err := users.EnsureIndexes(ctx); err != nil {
+			slog.Warn("could not create the user indexes", "err", err)
+		}
 	}
 
 	if !cfg.PeyConfigured() {
 		slog.Warn("PEY_API_KEY is empty; charges will answer 503 until it is set")
+	}
+	if !cfg.JWTSecretConfigured() {
+		slog.Warn("JWT_SECRET is not set; using default development secret")
 	}
 	if cfg.TestMode {
 		slog.Warn("test mode is on: charges above the ceiling are refused",
@@ -67,16 +77,19 @@ func main() {
 	}
 
 	app := fiber.New(fiber.Config{
-		AppName:      "DiviEat CoDi API",
+		AppName:      "DiviEat API",
 		ErrorHandler: middleware.ErrorHandler,
 	})
+	app.Use(middleware.CORS(cfg.CORSAllowOrigins))
 
+	tokens := utils.NewTokenManager(cfg.JWTSecret, constants.AuthTokenTTL)
+	auth := controllers.NewAuthController(users, tokens)
 	codi := controllers.NewCodiController(
 		classes.NewPeyClient(cfg.PeyAPIKey, cfg.PeyBaseURL),
 		charges,
 		cfg,
 	)
-	routes.Register(app, codi, verifier, cfg)
+	routes.Register(app, codi, auth, tokens, verifier, cfg)
 
 	slog.Info("listening", "port", cfg.Port)
 	if err := app.Listen(":" + cfg.Port); err != nil {

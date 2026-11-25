@@ -12,6 +12,15 @@ var (
 	ErrPeyNotConfigured = errors.New("PEY_API_KEY is empty; create one at portal.mipey.mx/developers")
 	ErrChargeNotFound   = errors.New("charge not found")
 	ErrInvalidSignature = errors.New("invalid webhook signature")
+
+	ErrEmailTaken         = errors.New("email is already registered")
+	ErrInvalidCredentials = errors.New("invalid email or password")
+	ErrInvalidToken       = errors.New("invalid or expired token")
+	ErrUserNotFound       = errors.New("user not found")
+	ErrNameRequired       = errors.New("name is required")
+	ErrInvalidEmail       = errors.New("invalid email address")
+	ErrWeakPassword       = errors.New("password must be at least 8 characters")
+	ErrInvalidRole        = errors.New("role must be comensal, mesero, or admin")
 )
 
 // PeyError wraps anything Pey answered that we cannot use.

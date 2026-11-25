@@ -13,9 +13,11 @@ import (
 )
 
 type Config struct {
-	Port         string
-	MongoURI     string
-	DatabaseName string
+	Port             string
+	MongoURI         string
+	DatabaseName     string
+	JWTSecret        string
+	CORSAllowOrigins string
 
 	PeyAPIKey        string
 	PeyBaseURL       string
@@ -51,6 +53,8 @@ func Load() (*Config, error) {
 		Port:             env("PORT", "8080"),
 		MongoURI:         env("MONGODB_URI", "mongodb://localhost:27017"),
 		DatabaseName:     env("DATABASE_NAME", "divieat"),
+		JWTSecret:        env("JWT_SECRET", "divieat-dev-jwt-secret"),
+		CORSAllowOrigins: env("CORS_ALLOW_ORIGINS", "*"),
 		PeyAPIKey:        env("PEY_API_KEY", ""),
 		PeyBaseURL:       env("PEY_BASE_URL", constants.PeyBaseURL),
 		PeyWebhookSecret: env("PEY_WEBHOOK_SECRET", ""),
@@ -63,6 +67,9 @@ func Load() (*Config, error) {
 
 // PeyConfigured reports whether charges can be created at all.
 func (c *Config) PeyConfigured() bool { return c.PeyAPIKey != "" }
+
+// JWTSecretConfigured reports whether JWT_SECRET was provided via env.
+func (c *Config) JWTSecretConfigured() bool { return os.Getenv("JWT_SECRET") != "" }
 
 func env(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {

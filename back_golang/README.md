@@ -41,6 +41,9 @@ The key comes from [portal.mipey.mx/developers](https://portal.mipey.mx/develope
 
 | | |
 |---|---|
+| `POST /auth/register` | registers a user (`name`, `email`, `role`, `password`) and returns a JWT |
+| `POST /auth/login` | authenticates a user and returns a JWT |
+| `GET /auth/me` | returns the authenticated user (`Authorization: Bearer <token>`) |
 | `POST /codi/charges` | creates the CoDi QR for one diner's share |
 | `GET /codi/orders/:order/charges` | charges on an order and their status |
 | `POST /webhooks/pey/codi` | payment received, signed by Pey |
