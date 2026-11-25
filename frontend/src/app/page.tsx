@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BarraSesion } from "@/components/BarraSesion/BarraSesion";
 import { Button } from "@/components/Button/Button";
 import { ORDEN_DEMO } from "@/dominio/orden";
 import estilos from "./page.module.css";
@@ -6,11 +7,12 @@ import estilos from "./page.module.css";
 export default function Inicio() {
   return (
     <main className={estilos.entrada}>
+      <BarraSesion />
       <p className={estilos.marca}>DiviEat</p>
       <h1 className={estilos.titulo}>Divide la cuenta sin pelearte</h1>
       <p className={estilos.texto}>
         Escanea el QR de tu mesa, elige lo que consumiste y paga solo tu parte
-        con CoDi. Sin descargar nada y sin registro.
+        con CoDi. Inicia sesión o entra directo a tu mesa.
       </p>
 
       <div className={estilos.boton}>

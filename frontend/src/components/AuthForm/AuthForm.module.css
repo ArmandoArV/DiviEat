@@ -1,0 +1,230 @@
+.regresar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  font-weight: var(--peso-bold);
+}
+
+.regresar:hover {
+  color: var(--color-primary-base);
+}
+
+.marca {
+  color: var(--color-primary-base);
+  font-size: 18px;
+  font-weight: var(--peso-black);
+  letter-spacing: -0.01em;
+}
+
+.titulo {
+  margin-top: var(--space-3);
+  font-size: 30px;
+  font-weight: var(--peso-black);
+  line-height: 36px;
+}
+
+.subtitulo {
+  margin-top: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: 16px;
+  line-height: 23px;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+}
+
+.etiqueta {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-weight: var(--peso-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.entrada {
+  width: 100%;
+  margin-top: var(--space-2);
+  padding: 14px var(--space-4);
+  border: 2px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-base);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: var(--peso-bold);
+  line-height: 22px;
+  transition: border-color 120ms ease;
+}
+
+.entrada:focus {
+  border-color: var(--color-primary-base);
+  outline: none;
+}
+
+.entrada::placeholder {
+  color: var(--color-text-muted);
+  font-weight: var(--peso-medium);
+}
+
+.entradaContrasena {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-top: var(--space-2);
+}
+
+.entradaContrasena .entrada {
+  margin-top: 0;
+  padding-right: 78px;
+}
+
+.botonVer {
+  position: absolute;
+  right: var(--space-3);
+  padding: var(--space-1) var(--space-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: var(--peso-extrabold);
+}
+
+.botonVer:hover {
+  color: var(--color-primary-base);
+}
+
+.ayuda {
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.roles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.rolOpcion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: var(--space-3) var(--space-2);
+  border: 2px solid var(--color-border-default);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-base);
+  color: var(--color-text-primary);
+  text-align: center;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.rolOpcion:hover {
+  border-color: var(--color-border-strong);
+}
+
+.rolActivo {
+  border-color: var(--color-primary-base);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-shadow);
+}
+
+.rolEtiqueta {
+  font-size: 14px;
+  font-weight: var(--peso-extrabold);
+  line-height: 18px;
+}
+
+.rolDescripcion {
+  margin-top: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.alertaError {
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--color-red-base);
+  border-radius: var(--radius-lg);
+  background: var(--color-red-soft);
+  color: var(--color-red-shadow);
+  font-size: 14px;
+  font-weight: var(--peso-bold);
+  line-height: 20px;
+}
+
+.pieCambio {
+  margin-top: var(--space-4);
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.liga {
+  color: var(--color-primary-base);
+  font-weight: var(--peso-extrabold);
+  text-decoration: underline;
+}
+
+.sesionActivaCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+  padding: var(--space-5);
+  border: 2px solid var(--color-primary-base);
+  border-radius: var(--radius-xl);
+  background: var(--color-primary-tint);
+}
+
+.sesionActivaFila {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.sesionActivaDatos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sesionActivaNombre {
+  font-size: 18px;
+  font-weight: var(--peso-extrabold);
+  line-height: 24px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sesionActivaCorreo {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acciones {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}

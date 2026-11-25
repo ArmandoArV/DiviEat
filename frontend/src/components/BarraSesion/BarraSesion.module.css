@@ -1,0 +1,111 @@
+.tarjeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--color-border-default);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface-base);
+}
+
+.tarjetaActiva {
+  border-color: var(--color-primary-base);
+  background: var(--color-primary-tint);
+}
+
+.identidad {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.datos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nombreFila {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.nombre {
+  font-size: 15px;
+  font-weight: var(--peso-extrabold);
+  line-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.correo {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 18px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.botonSalir {
+  flex: none;
+  padding: var(--space-2) var(--space-3);
+  border: 2px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-base);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: var(--peso-extrabold);
+}
+
+.botonSalir:hover {
+  border-color: var(--color-primary-base);
+  color: var(--color-primary-shadow);
+}
+
+.invitado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.invitadoTexto {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  font-weight: var(--peso-bold);
+}
+
+.ligas {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+}
+
+.ligaPrimaria {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-primary-base);
+  color: var(--color-text-on-dark);
+  font-size: 13px;
+  font-weight: var(--peso-extrabold);
+}
+
+.ligaSecundaria {
+  padding: var(--space-2) var(--space-3);
+  border: 2px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-base);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: var(--peso-extrabold);
+}

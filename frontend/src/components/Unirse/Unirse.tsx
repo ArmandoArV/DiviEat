@@ -7,17 +7,20 @@ import { Badge } from "@/components/Badge/Badge";
 import { Button } from "@/components/Button/Button";
 import { Pantalla } from "@/components/Pantalla/Pantalla";
 import type { Orden } from "@/dominio/orden";
+import { useAuth } from "@/hooks/useAuth";
 import estilos from "./Unirse.module.css";
 
 /**
  * El campo y el boton de la barra inferior comparten estado, asi que la
- * pantalla entera vive en el cliente. Lo unico que pedimos para entrar es el
- * nombre: sin correo, sin contraseña y sin descargar nada.
+ * pantalla entera vive en el cliente. Si el usuario tiene sesion iniciada,
+ * prellenamos su nombre automaticamente.
  */
 export function Unirse({ orden }: { orden: Orden }) {
   const router = useRouter();
-  const [nombre, setNombre] = useState("");
+  const { usuario } = useAuth();
+  const [nombreEditado, setNombreEditado] = useState<string | null>(null);
   const id = useId();
+  const nombre = nombreEditado ?? usuario?.name.slice(0, 24) ?? "";
   const listo = nombre.trim().length > 0;
   const dentro = orden.comensales.filter((c) => c.id !== "mariana");
 
@@ -82,7 +85,7 @@ export function Unirse({ orden }: { orden: Orden }) {
           id={id}
           className={estilos.entrada}
           value={nombre}
-          onChange={(evento) => setNombre(evento.target.value)}
+          onChange={(evento) => setNombreEditado(evento.target.value)}
           placeholder="Tu nombre"
           autoComplete="given-name"
           enterKeyHint="go"
