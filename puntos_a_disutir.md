@@ -28,4 +28,15 @@
 
     Cuando se genera el qr
 
-    
+    // Obtener la cantidad de mesas activas
+    db.tales.find({status: "Pending", status: "Paying"},{_id: 0, table: 1}).count()
+    //ventas del turno
+    db.tables.aggregate([
+        $match: {
+            timestamp: hoy xd,
+            status: "Payed"
+        },
+        $group : { _id: null, $sum: {"$total"}}
+    ])
+
+    db.tables.find({table: 2})
