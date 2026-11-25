@@ -1,0 +1,254 @@
+.escaner {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  background: var(--color-surface-dark);
+  color: var(--color-text-on-dark);
+  overflow: hidden;
+}
+
+.video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Oscurece arriba y abajo para que los controles se lean sobre cualquier
+   escena, sin tapar el centro, que es donde hay que apuntar. */
+.velo {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgb(31 23 20 / 85%) 0%,
+    rgb(31 23 20 / 25%) 22%,
+    rgb(31 23 20 / 25%) 62%,
+    rgb(31 23 20 / 92%) 82%
+  );
+}
+
+.capa {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
+.barraSuperior {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+}
+
+.titulo {
+  flex: 1;
+  font-size: 17px;
+  font-weight: var(--peso-extrabold);
+  text-align: center;
+}
+
+.iconoBtn {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: rgb(255 255 255 / 10%);
+  color: var(--color-text-on-dark);
+}
+
+.iconoBtn:disabled {
+  opacity: 0.3;
+}
+
+.iconoActivo {
+  background: var(--color-primary-base);
+}
+
+.centro {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  padding: 0 var(--space-5);
+}
+
+/* Visor del QR: cuatro esquinas, sin marco completo, para no competir con el
+   codigo que se esta leyendo. */
+.visorQR {
+  position: relative;
+  width: 248px;
+  height: 248px;
+}
+
+.esquina {
+  position: absolute;
+  width: 54px;
+  height: 54px;
+  border: 5px solid var(--color-primary-base);
+}
+
+.ne { top: 0; left: 0; border-right: none; border-bottom: none; border-radius: var(--radius-lg) 0 0 0; }
+.no { top: 0; right: 0; border-bottom: none; border-left: none; border-radius: 0 var(--radius-lg) 0 0; }
+.se { bottom: 0; left: 0; border-top: none; border-right: none; border-radius: 0 0 0 var(--radius-lg); }
+.so { bottom: 0; right: 0; border-top: none; border-left: none; border-radius: 0 0 var(--radius-lg) 0; }
+
+.linea {
+  position: absolute;
+  right: 12px;
+  left: 12px;
+  height: 3px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-base);
+  box-shadow: 0 0 16px 2px var(--color-primary-base);
+  animation: barrer 2.4s ease-in-out infinite;
+}
+
+@keyframes barrer {
+  0%, 100% { top: 14%; }
+  50% { top: 86%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .linea { animation: none; top: 50%; }
+}
+
+/* Visor del ticket: marco punteado completo, porque aqui si hay que encuadrar. */
+.visorTicket {
+  width: 246px;
+  height: 330px;
+  border: 4px dashed var(--color-primary-base);
+  border-radius: var(--radius-md);
+}
+
+.pista {
+  max-width: 300px;
+  color: rgb(255 255 255 / 88%);
+  font-size: 15px;
+  font-weight: var(--peso-bold);
+  line-height: 21px;
+  text-align: center;
+}
+
+.pistaPildora {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-full);
+  background: rgb(31 23 20 / 80%);
+}
+
+.barraInferior {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5)
+    calc(var(--space-5) + env(safe-area-inset-bottom));
+}
+
+.modos {
+  display: flex;
+  width: 100%;
+  padding: var(--space-1);
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: var(--radius-full);
+  background: rgb(255 255 255 / 8%);
+}
+
+.modo {
+  flex: 1;
+  padding: var(--space-3);
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: rgb(255 255 255 / 62%);
+  font-size: 15px;
+  font-weight: var(--peso-bold);
+}
+
+.modoActivo {
+  background: var(--color-primary-base);
+  color: var(--color-text-on-dark);
+}
+
+.enlace {
+  border: none;
+  background: none;
+  color: var(--color-primary-base);
+  font-size: 15px;
+  font-weight: var(--peso-bold);
+}
+
+.controles {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.disparador {
+  width: 76px;
+  height: 76px;
+  padding: 0;
+  border: 5px solid var(--color-surface-base);
+  border-radius: var(--radius-full);
+  background: var(--color-primary-base);
+}
+
+.disparador:active {
+  transform: scale(0.94);
+}
+
+.aviso {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-red-base);
+  color: var(--color-text-on-dark);
+  font-size: 14px;
+  font-weight: var(--peso-bold);
+  text-align: center;
+}
+
+/* Vista previa de la foto tomada */
+.previa {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface-dark);
+}
+
+.previaImagen {
+  flex: 1;
+  width: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+.previaPie {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-5)
+    calc(var(--space-5) + env(safe-area-inset-bottom));
+}
+
+.previaNota {
+  color: rgb(255 255 255 / 62%);
+  font-size: 13px;
+  line-height: 19px;
+  text-align: center;
+}

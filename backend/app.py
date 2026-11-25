@@ -1,14 +1,21 @@
 import logging
-from database import db, test_database_connection
+import sys
+from contextlib import asynccontextmanager
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse  # 1. Import HTMLResponse
 from routes.payment import v1_router
 
 
-app = FastAPI()
 
-database = db
+@asynccontextmanager
+async def ciclo_de_vida(_: FastAPI):
+    # Arrancar no debe depender de que Mongo este vivo: si no esta, la API
+    # sube igual y `/salud` lo dice. Caerse al importar solo oculta la causa.
+    if test_database_connection(db):
+        RepositorioDeCobros(db).asegurar_indices()
 
 test_database_connection(database)
 app.include_router(v1_router)
@@ -20,10 +27,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+registrar_manejadores(app)
+app.include_router(codi.router)
+app.include_router(webhooks.router)
+
 
 @app.get("/", response_class=HTMLResponse)
 def read_root():
-  return """
+    return """
     <html>
         <body>
             <h1>No hay nada que ver aqui</h1>

@@ -9,3 +9,6 @@ modelos/
 
 # Datos generados y fotos reales de tickets (privadas: traen folio y mesero)
 datos/
+
+# Node modules
+node_modules/

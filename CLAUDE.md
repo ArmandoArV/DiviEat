@@ -21,26 +21,83 @@ es de perfil Node, pero **el stack no está decidido** (ver "Decisiones abiertas
 | Página | id | Contenido |
 |---|---|---|
 | 01 · Landing | `0:1` | Landing desktop 1440×7306 + tablero "Guion de scroll" (especificación de movimiento) |
-| 02 · Flujo comensal | `2:2` | 12 pantallas móviles 390×844, de la cámara al comprobante |
+| 02 · Flujo comensal | `2:2` | 14 pantallas móviles 390×844, de la cámara al comprobante |
 | 03 · Panel restaurante | `2:3` | 3 pantallas desktop 1440×1024: mesas, detalle en vivo, QR por mesa |
 | 04 · Sistema de diseño | `2:4` | Tokens, escala tipográfica y componentes |
 | 05 · Marca | `45:266` | Exploración del logo, calibración y componentes de marca |
 
 ### Flujo comensal (orden real)
+Diseñado antes del golden path, así que **asume cuenta ya cerrada**: lee "El golden path
+del hackathon CoDi" para saber qué pantallas se reaprovechan y cuáles faltan.
+
 1. Permiso de cámara · 2. Cámara / escanear QR · 3. Cámara / foto del ticket ·
 4. Leyendo el ticket (OCR) · 5. Revisar lo detectado · 6. Te unes a la mesa ·
 7. Cuenta de la mesa · 8. Selección de consumo · 9. Dividir un compartido ·
 10. Resumen y propina · 11. Pago con CoDi · 12. Pago confirmado
 
+**La edición de «Revisar lo detectado»** está resuelta en dos pantallas aparte: `05a ·
+Corregir un producto` (hoja inferior sobre la lista atenuada) y `05b · Producto
+corregido`. La hoja edita **nombre, cantidad y precio unitario**; el importe del renglón
+**no se edita, se calcula** (`3 × $65 = $195`), y el cuadre contra el total impreso se
+recalcula en vivo dentro de la misma hoja. Eliminar un producto es la acción secundaria.
+Ese es el contrato del paso obligatorio del camino B.
+
+## El golden path del hackathon CoDi
+
+Define el happy path que evalua el hackathon (`HACKATHON CoDi-1.pdf`, 22/11/2026).
+
+**Escanear QR → registrar nombre → seleccionar alimentos → guardar → ¿modificar? →
+¿seleccionar mas? → actualizar el dashboard → «Se pide la cuenta» → pagar.**
+
+El pago se bifurca: si se paga **por separado** se genera un QR CoDi por usuario; si no,
+**un solo QR CoDi con el total de la mesa**. En ambas ramas se manda comprobante y la
+orden se marca como completada.
+
+Dos lecturas que cambian el plano del proyecto:
+
+- **No hay rama de foto ni de OCR.** Ninguna de las 8 historias de usuario la menciona.
+  Todo `ai/` queda fuera del camino evaluado. Sigue siendo el camino B para restaurantes
+  sin menu cargado, pero no es el principal.
+- **El diagrama supone pedir desde la app**, no dividir una cuenta ya cerrada: tiene pasos
+  de «modificar los alimentos seleccionados» y «se pide la cuenta». Las 12 pantallas del
+  Figma estan construidas sobre el supuesto contrario (la comida termino, aqui esta el
+  ticket, escoge lo tuyo).
+
+Huecos contra lo ya disenado: no existe pantalla de **«Pedir la cuenta»**, no existe la
+rama de **pagar el total de la mesa con un solo QR** (DiviEat solo sabe dividir), y el
+panel de restaurante no tiene el **registro de transacciones CoDi** que pide la historia 8.
+La historia 7 (el mesero ve pagado/pendiente) ya la cubre «Detalle en vivo». La idea 04 del
+PDF, marcada «esta si o si», es literalmente el nucleo de DiviEat.
+
+### Pedir desde la app resuelve el problema dificil
+
+Lo mas duro de dividir una cuenta es saber **quien pidio que**: para eso existen el OCR, la
+pantalla «Revisar lo detectado» y «Seleccion de consumo». Si cada quien pide desde su
+celular la atribucion viene resuelta de origen, y la app pasa a ser **la fuente de la
+verdad de la mesa** — sin integrarse al POS y sin leer un ticket.
+
+Con eso, «Seleccion de consumo» deja de ser «marca lo que te comiste» y queda solo para
+**compartidos** y para lo que capturo el mesero.
+
+**Mesas mixtas: el caso que no esta en el diagrama.** No todos van a sacar el celular, y
+las jarras y los centros de mesa los pone el mesero. Si la app solo registra lo pedido por
+app, la cuenta no cuadra contra la caja. El mesero puede agregar platillos desde el panel y
+esos entran como **«sin asignar»**: visibles para todos, reclamables desde el celular y
+divisibles si son compartidos. **«Sin asignar en $0» es la condicion para cerrar la mesa.**
+
 ## Decisiones de producto ya tomadas
 
 - **Sin app y sin registro.** Solo se pide el nombre para que los demás te identifiquen.
-- **CoDi es el diferenciador**: sin comisión por transacción. Tarjeta y billetera existen
-  como alternativas, con la tarifa del procesador.
-- **Dos formas de entrar**: QR de la mesa (restaurante integrado) o **foto del ticket con
-  OCR** (restaurante no integrado). El OCR abre el mercado chico pero introduce error, por
-  eso la pantalla *Revisar lo detectado* es obligatoria y cuadra la suma contra el total
-  impreso. No elimines ese paso.
+- **CoDi es el único método de pago.** Sin comisión por transacción, y es lo que evalúa
+  el hackathon. Tarjeta y billetera digital **se quitaron de la pantalla 11**: con un solo
+  método el selector dejaba de ser una elección, así que la tarjeta de CoDi ya no lleva
+  radio y el hueco lo ocupa el desglose (consumo + propina = total). Si algún día vuelven,
+  vuelve también el selector.
+- **Dos formas de entrar, pero ya no son pares.** El **QR de la mesa es el camino
+  principal** (es el golden path del hackathon y el unico con pedido desde la app). La
+  **foto del ticket con OCR es el camino B**, para restaurantes sin menu cargado: abre el
+  mercado chico pero introduce error, por eso la pantalla *Revisar lo detectado* es
+  obligatoria ahi y cuadra la suma contra el total impreso. No elimines ese paso.
 - **Los compartidos se dividen entre quienes los pidieron**, no entre toda la mesa.
 - **La cuenta es en vivo**: cada pago actualiza la mesa al instante, sin recargar.
 - La imagen del ticket **se procesa y se descarta**; eso está prometido en la UI.
@@ -145,7 +202,8 @@ No conviertas esos guiones en negativos.
 - Alguien se va sin pagar: qué ve el mesero y cómo se cierra la mesa.
 - Cobro mixto en efectivo marcado por el mesero.
 - **Facturación CFDI** — en México lo van a pedir en la mesa.
-- Alta del restaurante: carga de menú, zonas y mesas.
+- Alta del restaurante: carga de menú, zonas y mesas. **Ya no es opcional**: sin menú
+  cargado no hay pedido desde la app, y sin pedido desde la app no hay golden path.
 - De la hoja de marca faltan: área de respeto, tamaño mínimo, tira de app icon/favicon y
   usos incorrectos.
 
