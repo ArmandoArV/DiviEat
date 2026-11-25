@@ -37,6 +37,7 @@ def generar_qr_codi(body: QrBody) -> QrRespuesta:
 
 
 def generar_link_pago(body: PaymentLinkBody) -> PaymentLinkRespuesta:
+    # Nadie sabe que hizo copilot
     payload = body.model_dump(exclude={"concept", "numRef"}, exclude_none=True)
     payload["clientReferenceId"] = body.clientReferenceId or body.numRef
     datos_qr = {k: v for k, v in {"concept": body.concept, "numRef": body.numRef}.items() if v is not None}
@@ -49,3 +50,5 @@ def generar_link_pago(body: PaymentLinkBody) -> PaymentLinkRespuesta:
     return PaymentLinkRespuesta.model_validate_json(
         _post_pey("/payment-link/create", json.dumps(payload))
     )
+    
+    
