@@ -5,20 +5,9 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse  # 1. Import HTMLResponse
+from routes.payment import v1_router
 
-sys.path.insert(0, str(Path(__file__).parent / "src"))
-
-from backend.config import obtener_ajustes  # noqa: E402
-from backend.middleware.errors import registrar_manejadores  # noqa: E402
-from backend.repositories.charges import RepositorioDeCobros  # noqa: E402
-from backend.routes import codi, webhooks  # noqa: E402
-from database import db, test_database_connection  # noqa: E402
-
-logging.basicConfig(level=logging.INFO)
-log = logging.getLogger(__name__)
-
-ajustes = obtener_ajustes()
 
 
 @asynccontextmanager
@@ -28,19 +17,8 @@ async def ciclo_de_vida(_: FastAPI):
     if test_database_connection(db):
         RepositorioDeCobros(db).asegurar_indices()
 
-    if not ajustes.pey_configurado:
-        log.warning("PEY_API_KEY vacia: los cobros CoDi responderan 503 hasta configurarla")
-    if ajustes.pey_test_mode:
-        log.warning(
-            "Modo de prueba activo: se rechazan cobros por encima de %s MXN. "
-            "Pey no tiene sandbox, los cobros son con dinero real.",
-            ajustes.pey_test_max_amount_mxn,
-        )
-    yield
-
-
-app = FastAPI(title="DiviEat API", lifespan=ciclo_de_vida)
-
+test_database_connection(database)
+app.include_router(v1_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -66,10 +44,7 @@ def read_root():
     """
 
 
-@app.get("/salud", tags=["salud"])
-def salud() -> dict[str, object]:
-    return {
-        "ok": True,
-        "pey_configurado": ajustes.pey_configurado,
-        "modo_prueba": ajustes.pey_test_mode,
-    }
+@app.get("/api/user/1",)
+def get_user_1():
+    return {"id": 1, "name": "User 1", "email": "user1@example.com", "age": 30}
+

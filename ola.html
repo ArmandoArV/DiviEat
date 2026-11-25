@@ -1,0 +1,30 @@
+<img id="qr" alt="QR de pago CoDi" />
+
+<p id="error" style="color: red"></p>
+
+<script>
+  async function cargarQr() {
+    const res = await fetch("http://localhost:8000/v1/payment/qrcode", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        amount: 0.01,
+        concept: "TEST",
+        expiration: 360,
+        numRef: "7",
+        generateImage: true,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      document.getElementById("error").textContent =
+        data.error ?? `Error ${res.status}`;
+      return;
+    }
+    document.getElementById("qr").src = `data:image/png;base64,${data.qrImage}`;
+  }
+
+  cargarQr().catch((err) => {
+    document.getElementById("error").textContent = err.message;
+  });
+</script>
